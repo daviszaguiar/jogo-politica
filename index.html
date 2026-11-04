@@ -1,0 +1,949 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presidência do Brasil | Simulador de Governo</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--green:#087b45;--dark:#10251d;--yellow:#f5c542;--blue:#164b86;--bg:#eef2f0;--white:#fff;--red:#d83c46;--muted:#738078}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:#1d2923}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:0;border-radius:7px;padding:10px 15px;font-weight:bold;transition:.15s}
+button:hover{filter:brightness(.93);transform:translateY(-1px)}
+.primary{background:var(--green);color:white}
+.secondary{background:#e6eee9;color:#174c32}
+.danger{background:#c93643;color:white}
+.warning{background:#e9b52f;color:#352900}
+.darkbtn{background:#263b31;color:white}
+.small{font-size:12px;padding:7px 10px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #d4ded7;border-radius:7px;background:white;color:#26342c;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--green)}
+label{font-size:13px;font-weight:bold;display:block;margin-bottom:6px}
+.field{margin-bottom:14px}
+.muted{color:var(--muted)}
+.hidden{display:none!important}
+#setup{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:25px;background:linear-gradient(140deg,#092d20,#087b45 60%,#d3ad34)}
+.setup-card{width:min(850px,100%);background:white;padding:30px;border-radius:17px;box-shadow:0 20px 60px #0005}
+.logo{display:flex;align-items:center;gap:13px;margin-bottom:22px}
+.logo-icon{width:52px;height:52px;background:var(--green);color:white;border-radius:12px;display:grid;place-items:center;font-size:27px}
+.logo h1{margin:0;font-size:24px}
+.logo p{margin:4px 0;color:var(--muted);font-size:12px}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.full{grid-column:1/-1}
+.setup-note{padding:12px;background:#f1f6f2;border-left:4px solid var(--green);font-size:12px;line-height:1.6;margin:15px 0}
+#game{display:none;min-height:100vh}
+.topbar{height:65px;background:#10251d;color:white;display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:20}
+.brand{font-weight:bold;letter-spacing:.5px}.brand span{color:#f5c542}
+.top-info{display:flex;align-items:center;gap:18px;font-size:12px}
+.layout{display:flex;min-height:calc(100vh - 65px)}
+.sidebar{width:230px;background:#172e23;color:white;padding:15px 10px;flex-shrink:0}
+.sidebar-title{font-size:10px;color:#91a99b;padding:12px 10px 7px;letter-spacing:1px}
+.nav{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;color:#d5e3d9;padding:11px 12px;margin:2px 0;font-size:13px;font-weight:normal;border-radius:6px}
+.nav:hover,.nav.active{background:#27563d;color:white}
+.nav .ico{width:20px;text-align:center}
+.main{flex:1;min-width:0;padding:22px;max-width:1600px;margin:auto;width:100%}
+.page{display:none}.page.active{display:block}
+.page-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:20px;flex-wrap:wrap}
+.page-heading h2{margin:0;font-size:23px}.page-heading p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:16px}
+.card{background:white;border-radius:10px;padding:16px;box-shadow:0 2px 8px #172e2309;border:1px solid #e6ece7;margin-bottom:14px;min-width:0}
+.card h3{margin:0 0 13px;font-size:15px}
+.metric-label{font-size:11px;color:var(--muted);margin-bottom:9px}
+.metric{font-size:25px;font-weight:bold;letter-spacing:-.5px}
+.metric-sub{font-size:11px;color:var(--muted);margin-top:6px}
+.progress{height:7px;background:#e8eeea;border-radius:10px;overflow:hidden;margin-top:10px}
+.progress span{display:block;height:100%;border-radius:10px;background:var(--green)}
+.two{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.section-title{font-size:16px;font-weight:bold;margin:20px 0 12px}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{text-align:left;padding:11px 9px;border-bottom:1px solid #edf0ed;white-space:nowrap}
+th{background:#f5f8f5;color:#647168;font-size:11px}
+td button{margin:2px}
+.tag{display:inline-block;padding:4px 7px;border-radius:20px;font-size:10px;font-weight:bold;background:#e9f3ed;color:#267346}
+.tag.red{background:#ffeded;color:#c23943}.tag.yellow{background:#fff5d9;color:#9c6a00}.tag.blue{background:#eaf1fb;color:#315e9a}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+.notice{padding:12px;background:#f4f7f4;border-radius:8px;margin:9px 0;font-size:12px;line-height:1.6;border-left:3px solid var(--green)}
+.notice.red{border-color:var(--red);background:#fff4f4}
+.notice.yellow{border-color:#e4b32b;background:#fff9e8}
+.big-number{font-size:30px;font-weight:bold}
+.list-item{padding:12px 0;border-bottom:1px solid #edf0ed}
+.list-item:last-child{border:0}
+.modal-bg{position:fixed;inset:0;background:#07150dcc;z-index:100;display:none;align-items:center;justify-content:center;padding:15px}
+.modal-bg.open{display:flex}
+.modal{background:white;width:min(620px,100%);max-height:90vh;overflow-y:auto;padding:22px;border-radius:12px}
+.modal h3{margin-top:0}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+.toast{position:fixed;bottom:20px;right:20px;background:#183b2a;color:white;padding:13px 18px;border-radius:8px;z-index:200;box-shadow:0 4px 20px #0003;max-width:350px;font-size:13px;animation:fade .2s}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.event-card{border-left:4px solid var(--yellow)}
+.event-options{display:grid;gap:8px;margin-top:14px}
+.event-options button{text-align:left;background:#f1f5f2;color:#1c3c2a;padding:12px}
+.event-options button:hover{background:#dcebe1}
+.chart-container{height:240px;position:relative}
+#mobileMenu{display:none}
+@media(max-width:1050px){.grid{grid-template-columns:repeat(2,1fr)}.sidebar{width:195px}.two{grid-template-columns:1fr}}
+@media(max-width:700px){
+ .topbar{height:58px;padding:0 12px}.top-info{gap:8px}.top-info .hide-mobile{display:none}
+ .layout{display:block}.sidebar{display:none;width:100%;padding:8px;position:relative}.sidebar.open{display:block}
+ #mobileMenu{display:inline-block}.main{padding:13px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .metric{font-size:21px}.card{padding:12px}
+ .setup-grid{grid-template-columns:1fr}.full{grid-column:auto}
+ .setup-card{padding:20px}.setup-card h1{font-size:20px}
+ .three{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<section id="setup">
+<div class="setup-card">
+<div class="logo">
+<div class="logo-icon">🇧🇷</div>
+<div><h1>PRESIDÊNCIA DO BRASIL</h1><p>SIMULADOR DE GOVERNO • EDIÇÃO 2027–2030</p></div>
+</div>
+<h2>Formação do governo</h2>
+<p class="muted" style="font-size:13px">Configure sua candidatura e prepare-se para administrar a República Federativa do Brasil.</p>
+<form id="setupForm">
+<div class="setup-grid">
+<div class="field"><label>Nome do presidente</label><input id="president" placeholder="Nome completo" required></div>
+<div class="field"><label>Nome do vice-presidente</label><input id="vice" placeholder="Nome completo" required></div>
+<div class="field"><label>Partido político</label><select id="party"></select></div>
+<div class="field"><label>Idade do presidente</label><input id="age" type="number" min="18" max="120" value="45"></div>
+<div class="field"><label>Gênero</label><select id="gender"><option>Masculino</option><option>Feminino</option><option>Outro</option></select></div>
+<div class="field"><label>Coligação / Aliança eleitoral</label><input id="coalition" placeholder="Nome da aliança"></div>
+<div class="field"><label>Perfil político</label><select id="profile"><option>Conservador</option><option>Liberal</option><option selected>Centro</option><option>Social-democrata</option><option>Progressista</option><option>Nacionalista</option></select></div>
+<div class="field"><label>Início do mandato</label><select id="startDate"><option value="2027-01">Janeiro de 2027</option></select></div>
+<div class="field"><label>Dificuldade</label><select id="difficulty"><option value="hard" selected>Difícil</option><option value="normal">Normal</option><option value="extreme">Extrema</option></select></div>
+<div class="field"><label>Composição inicial do Congresso</label><select id="composition"><option value="sim">Distribuição simulada por partido</option><option value="custom">Configurar manualmente depois</option></select></div>
+</div>
+<div class="setup-note"><b>Nota de simulação:</b> os partidos e instituições são inspirados na realidade brasileira. As bancadas, personagens, governadores, indicadores econômicos e acontecimentos gerados são dados fictícios configuráveis, não representam a composição oficial ou previsões reais. As regras constitucionais são referências simplificadas para fins de jogo.</div>
+<button class="primary" style="width:100%;padding:14px" type="submit">ASSUMIR A PRESIDÊNCIA →</button>
+</form>
+<div class="row" style="margin-top:14px">
+<button class="secondary small" onclick="loadGame()">Carregar partida salva</button>
+<span class="muted" style="font-size:11px">Salvamento automático ativado</span>
+</div>
+</div>
+</section>
+
+<section id="game">
+<header class="topbar">
+<div class="row" style="gap:10px">
+<button id="mobileMenu" class="darkbtn small" onclick="toggleMenu()">☰</button>
+<div class="brand">🇧🇷 PRESIDÊNCIA <span>2027–2030</span></div>
+</div>
+<div class="top-info">
+<span id="topPresident">Presidente</span>
+<span class="hide-mobile" id="topDate">Janeiro de 2027</span>
+<span class="tag yellow" id="topDifficulty">DIFÍCIL</span>
+<button class="darkbtn small" onclick="saveGame()">Salvar</button>
+</div>
+</header>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-title">ADMINISTRAÇÃO</div>
+<button class="nav active" data-page="overview"><span class="ico">▦</span> Visão geral</button>
+<button class="nav" data-page="presidency"><span class="ico">🏛️</span> Presidência</button>
+<button class="nav" data-page="ministries"><span class="ico">▤</span> Ministérios</button>
+<button class="nav" data-page="congress"><span class="ico">⚖️</span> Congresso Nacional</button>
+<button class="nav" data-page="chamber"><span class="ico">🏢</span> Câmara dos Deputados</button>
+<button class="nav" data-page="senate"><span class="ico">🏛️</span> Senado Federal</button>
+<button class="nav" data-page="parties"><span class="ico">🤝</span> Relações políticas</button>
+<button class="nav" data-page="stf"><span class="ico">⚖️</span> Indicações ao STF</button>
+<div class="sidebar-title">GESTÃO E POLÍTICAS PÚBLICAS</div>
+<button class="nav" data-page="economy"><span class="ico">📈</span> Economia</button>
+<button class="nav" data-page="budget"><span class="ico">💰</span> Orçamento</button>
+<button class="nav" data-page="governors"><span class="ico">🗺️</span> Governadores</button>
+<button class="nav" data-page="foreign"><span class="ico">🌎</span> Política externa</button>
+<button class="nav" data-page="events"><span class="ico">⚠️</span> Eventos e crises</button>
+<button class="nav" data-page="impeachment"><span class="ico">📜</span> Impeachment</button>
+<button class="nav" data-page="history"><span class="ico">📚</span> Histórico do governo</button>
+<div class="sidebar-title">SISTEMA</div>
+<button class="nav" data-page="endgame"><span class="ico">🏁</span> Encerramento</button>
+<button class="nav" onclick="newGame()"><span class="ico">＋</span> Novo governo</button>
+</aside>
+
+<main class="main">
+<section class="page active" id="page-overview">
+<div class="page-heading">
+<div><h2>Painel presidencial</h2><p id="welcomeText">Acompanhamento estratégico do governo federal.</p></div>
+<div class="actions"><button class="secondary" onclick="openEvent()">📋 Agenda de decisões</button><button class="primary" onclick="advanceMonth()">Avançar mês →</button></div>
+</div>
+<div class="grid" id="metrics"></div>
+<div class="two">
+<div>
+<div class="card"><div class="row"><h3>Desempenho do governo</h3><span class="tag" id="governmentStatus">Em exercício</span></div><div class="chart-container"><canvas id="mainChart"></canvas></div></div>
+<div class="card"><h3>Indicadores econômicos</h3><div class="grid" style="grid-template-columns:repeat(2,1fr)" id="economicMini"></div></div>
+</div>
+<div>
+<div class="card"><h3>Agenda presidencial</h3><div id="agenda"></div></div>
+<div class="card"><h3>Situação política</h3><div id="politicalSummary"></div></div>
+<div class="card"><h3>Últimas notícias</h3><div id="news"></div></div>
+</div>
+</div>
+</section>
+
+<section class="page" id="page-presidency">
+<div class="page-heading"><div><h2>Presidência da República</h2><p>Decisões estratégicas e coordenação do Poder Executivo.</p></div></div>
+<div class="grid" id="presMetrics"></div>
+<div class="card"><h3>Decisões presidenciais</h3><div class="grid" style="grid-template-columns:repeat(2,1fr)" id="presActions"></div></div>
+<div class="card"><h3>Coordenação do governo</h3><div id="coordination"></div></div>
+</section>
+
+<section class="page" id="page-ministries">
+<div class="page-heading"><div><h2>Ministérios e administração federal</h2><p>Monte sua equipe, avalie desempenho e gerencie crises ministeriais.</p></div><button class="primary" onclick="appointMinister()">＋ Nomear ministro</button></div>
+<div class="grid" id="ministryMetrics"></div>
+<div class="card"><h3>Primeiro escalão</h3><div class="table-wrap"><table><thead><tr><th>Ministério</th><th>Ministro(a)</th><th>Competência</th><th>Popularidade</th><th>Lealdade</th><th>Desempenho</th><th>Ações</th></tr></thead><tbody id="ministryTable"></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-congress">
+<div class="page-heading"><div><h2>Congresso Nacional</h2><p>Negociação legislativa, tramitação de propostas e articulação.</p></div><button class="primary" onclick="newProposal()">＋ Nova proposta</button></div>
+<div class="grid" id="congressMetrics"></div>
+<div class="two">
+<div class="card"><h3>Projetos em tramitação</h3><div id="proposals"></div></div>
+<div class="card"><h3>Articulação legislativa</h3><div id="congressAdvice"></div><button class="secondary" onclick="negotiateCongress()">Iniciar articulação</button></div>
+</div>
+<div class="card"><h3>Histórico de votações</h3><div class="table-wrap"><table><thead><tr><th>Proposta</th><th>Casa</th><th>Favoráveis</th><th>Contrários</th><th>Abstenções</th><th>Resultado</th></tr></thead><tbody id="voteHistory"></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-chamber">
+<div class="page-heading"><div><h2>Câmara dos Deputados</h2><p>513 cadeiras • Simulação de bancadas e votações.</p></div><button class="primary" onclick="openVote('Câmara')">Realizar votação</button></div>
+<div class="grid" id="chamberMetrics"></div>
+<div class="card"><h3>Composição partidária simulada</h3><div class="table-wrap"><table><thead><tr><th>Partido</th><th>Deputados</th><th>Relacionamento</th><th>Posição</th><th>Fidelidade</th></tr></thead><tbody id="chamberTable"></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-senate">
+<div class="page-heading"><div><h2>Senado Federal</h2><p>81 cadeiras • Representação dos estados.</p></div><button class="primary" onclick="openVote('Senado')">Realizar votação</button></div>
+<div class="grid" id="senateMetrics"></div>
+<div class="card"><h3>Composição partidária simulada</h3><div class="table-wrap"><table><thead><tr><th>Partido</th><th>Senadores</th><th>Relacionamento</th><th>Posição</th><th>Fidelidade</th></tr></thead><tbody id="senateTable"></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-parties">
+<div class="page-heading"><div><h2>Relações políticas</h2><p>Administre a coalizão. Acordos podem fracassar e promessas têm consequências.</p></div><button class="primary" onclick="partyMeeting()">Reunião política</button></div>
+<div class="grid" id="partyMetrics"></div>
+<div class="card"><h3>Mapa das relações partidárias</h3><div class="table-wrap"><table><thead><tr><th>Partido</th><th>Presidente nacional</th><th>Deputados</th><th>Senadores</th><th>Relacionamento</th><th>Base</th><th>Ministérios</th><th>Ações</th></tr></thead><tbody id="partyTable"></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-stf">
+<div class="page-heading"><div><h2>Supremo Tribunal Federal</h2><p>Indicações presidenciais e aprovação pelo Senado.</p></div><button class="primary" onclick="nominateSTF()">＋ Indicar ministro</button></div>
+<div class="notice">A indicação presidencial depende de aprovação da maioria absoluta do Senado: pelo menos 41 votos favoráveis, conforme o modelo constitucional. A sabatina e a votação são simuladas.</div>
+<div class="card"><h3>Indicações e histórico</h3><div id="stfList"></div></div>
+</section>
+
+<section class="page" id="page-economy">
+<div class="page-heading"><div><h2>Economia nacional</h2><p>Indicadores macroeconômicos e decisões de política econômica.</p></div></div>
+<div class="grid" id="economyMetrics"></div>
+<div class="two">
+<div class="card"><h3>Histórico econômico</h3><div class="chart-container"><canvas id="economyChart"></canvas></div></div>
+<div class="card"><h3>Decisões econômicas</h3><div id="economyActions"></div></div>
+</div>
+<div class="card"><h3>Autoridade monetária independente</h3><div id="centralBank"></div></div>
+</section>
+
+<section class="page" id="page-budget">
+<div class="page-heading"><div><h2>Orçamento federal</h2><p>Gestão fiscal, despesas, arrecadação e investimentos.</p></div></div>
+<div class="grid" id="budgetMetrics"></div>
+<div class="card"><h3>Instrumentos orçamentários</h3><div class="grid" style="grid-template-columns:repeat(2,1fr)" id="budgetActions"></div></div>
+<div class="card"><h3>Distribuição simulada de despesas</h3><div class="chart-container"><canvas id="budgetChart"></canvas></div></div>
+</section>
+
+<section class="page" id="page-governors">
+<div class="page-heading"><div><h2>Governadores e estados</h2><p>Articulação federativa com as 27 unidades da Federação.</p></div><button class="primary" onclick="governorMeeting()">Reunião com governadores</button></div>
+<div class="grid" id="governorMetrics"></div>
+<div class="card"><h3>Mapa de relações federativas</h3><div class="table-wrap"><table><thead><tr><th>Estado</th><th>Governador</th><th>Partido</th><th>Popularidade</th><th>Relação</th><th>Alinhamento</th><th>Ações</th></tr></thead><tbody id="governorTable"></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-foreign">
+<div class="page-heading"><div><h2>Política externa</h2><p>Diplomacia, comércio internacional e cooperação estratégica.</p></div></div>
+<div class="grid" id="foreignMetrics"></div>
+<div class="card"><h3>Países e blocos estratégicos</h3><div class="table-wrap"><table><thead><tr><th>País / bloco</th><th>Relação diplomática</th><th>Comércio</th><th>Cooperação</th><th>Ações</th></tr></thead><tbody id="foreignTable"></tbody></table></div></div>
+</section>
+
+<section class="page" id="page-events">
+<div class="page-heading"><div><h2>Eventos e crises</h2><p>Administre acontecimentos nacionais e desafios inesperados.</p></div><button class="secondary" onclick="openEvent()">Consultar situação</button></div>
+<div class="card"><h3>Crises ativas</h3><div id="activeCrises"></div></div>
+<div class="card"><h3>Eventos recentes</h3><div id="eventHistory"></div></div>
+</section>
+
+<section class="page" id="page-impeachment">
+<div class="page-heading"><div><h2>Crise institucional e impeachment</h2><p>Processo inspirado na Constituição Federal e na Lei 1.079/1950.</p></div></div>
+<div class="grid" id="impeachmentMetrics"></div>
+<div class="card"><h3>Situação jurídica e política</h3><div id="impeachmentStatus"></div></div>
+<div class="card"><h3>Defesa do mandato</h3><div class="grid" style="grid-template-columns:repeat(2,1fr)" id="impeachmentActions"></div></div>
+</section>
+
+<section class="page" id="page-history">
+<div class="page-heading"><div><h2>Histórico do governo</h2><p>Registro permanente das decisões e consequências da administração.</p></div><button class="secondary" onclick="exportHistory()">Exportar histórico</button></div>
+<div class="card"><h3>Registro cronológico</h3><div id="historyList"></div></div>
+</section>
+
+<section class="page" id="page-endgame">
+<div class="page-heading"><div><h2>Relatório de encerramento</h2><p>Avaliação do mandato presidencial e possibilidade de reeleição.</p></div></div>
+<div class="card" id="endgameContent"></div>
+</section>
+</main>
+</div>
+</section>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+<div class="modal"><div id="modalContent"></div></div>
+</div>
+
+<script>
+"use strict";
+
+const PARTIES=[
+["PL","Conservador",40,20],["PT","Social-democrata",70,10],["PSD","Centro",55,15],
+["MDB","Centro",45,12],["União Brasil","Centro-direita",50,10],["PP","Centro-direita",45,7],
+["Republicanos","Conservador",40,6],["PSB","Centro-esquerda",35,4],["PDT","Trabalhista",25,4],
+["PSOL","Progressista",15,2],["PCdoB","Esquerda",10,1],["PSDB","Centro",20,5],
+["Podemos","Centro-direita",25,3],["Novo","Liberal",20,2],["Avante","Centro",15,2],
+["Solidariedade","Trabalhista",10,1],["PRD","Centro-direita",10,1],["PV","Ambientalista",5,1],
+["Rede","Progressista",5,1],["Cidadania","Centro",5,1],["Missão","Progressista",2,0],
+["Agir","Centro",3,1],["DC","Conservador",3,1],["Mobiliza","Centro",2,0],
+["PSTU","Socialista",1,0],["PCB","Comunista",1,0],["UP","Socialista",1,0]
+];
+const MINISTRIES=[
+"Casa Civil","Fazenda","Justiça e Segurança Pública","Defesa","Relações Exteriores",
+"Saúde","Educação","Agricultura e Pecuária","Transportes",
+"Desenvolvimento, Indústria, Comércio e Serviços","Minas e Energia","Comunicações",
+"Meio Ambiente e Mudança do Clima","Planejamento e Orçamento",
+"Gestão e Inovação em Serviços Públicos","Desenvolvimento e Assistência Social",
+"Cidades","Ciência, Tecnologia e Inovação","Cultura","Esporte","Turismo",
+"Trabalho e Emprego","Previdência Social","Integração e Desenvolvimento Regional",
+"Direitos Humanos e Cidadania","Mulheres","Igualdade Racial","Povos Indígenas",
+"Portos e Aeroportos","Empreendedorismo, Microempresa e Empresa de Pequeno Porte",
+"Pesca e Aquicultura","Secretaria de Comunicação Social",
+"Secretaria-Geral da Presidência","Gabinete de Segurança Institucional",
+"Advocacia-Geral da União"
+];
+const STATES=["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+const STATE_NAMES=["Acre","Alagoas","Amapá","Amazonas","Bahia","Ceará","Distrito Federal","Espírito Santo","Goiás","Maranhão","Mato Grosso","Mato Grosso do Sul","Minas Gerais","Pará","Paraíba","Paraná","Pernambuco","Piauí","Rio de Janeiro","Rio Grande do Norte","Rio Grande do Sul","Rondônia","Roraima","Santa Catarina","São Paulo","Sergipe","Tocantins"];
+const COUNTRIES=["Estados Unidos","China","Argentina","Rússia","União Europeia","Índia","Japão","Mercosul","BRICS","ONU"];
+const PRESIDENTS=["Ana Martins","Carlos Ferreira","Marcos Oliveira","Helena Costa","Roberto Almeida","Paulo Nascimento","Ricardo Souza","Juliana Ribeiro","Fernando Carvalho","Eduardo Lima"];
+const FIRST=["João","Maria","Pedro","Ana","Carlos","Lucas","Mariana","Rafael","Paulo","Fernanda","Ricardo","Gabriela","André","Beatriz"];
+const LAST=["Silva","Santos","Oliveira","Costa","Souza","Pereira","Almeida","Ferreira","Ribeiro","Carvalho","Lima","Martins"];
+const $=id=>document.getElementById(id);
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const clamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,n));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const money=n=>"R$ "+Number(n).toLocaleString("pt-BR",{maximumFractionDigits:1});
+const fmt=n=>Number(n).toLocaleString("pt-BR",{maximumFractionDigits:1});
+const monthNames=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+let S=null,mainChart=null,economyChart=null,budgetChart=null;
+
+function makePartyData(){
+ let weights=PARTIES.map(p=>Math.max(1,p[2]));
+ let total=weights.reduce((a,b)=>a+b,0);
+ let seats=PARTIES.map((p,i)=>({name:p[0],ideology:p[1],deputies:Math.floor(p[2]*513/total),senators:Math.floor(p[3]*81/PARTIES.reduce((a,x)=>a+x[3],0)),relation:rand(-15,25),loyalty:rand(35,75),base:false,president:pick(FIRST)+" "+pick(LAST),leaderC:pick(FIRST),leaderS:pick(FIRST),ministries:[],demands:pick(["Ministérios e participação em decisões","Cargos regionais e recursos orçamentários","Apoio a pautas econômicas","Participação na coordenação política","Compromissos com investimentos regionais"]),history:[],brokenPromises:0}));
+ let dc=513-seats.reduce((a,p)=>a+p.deputies,0),ds=81-seats.reduce((a,p)=>a+p.senators,0);
+ seats[0].deputies+=dc;seats[0].senators+=ds;
+ return seats;
+}
+function createGame(data){
+ S=data||{
+ version:1,month:0,year:2027,monthIndex:0,turns:0,
+ president:$("president").value.trim(),vice:$("vice").value.trim(),
+ party:$("party").value,age:+$("age").value,gender:$("gender").value,
+ coalition:$("coalition").value||"Aliança Nacional",profile:$("profile").value,
+ difficulty:$("difficulty").value,phase:"Governo",
+ popularity:48,approval:46,rejection:38,governability:38,
+ governorsRelation:40,mayorsRelation:38,opposition:55,institution:65,
+ economy:{gdp:2.0,inflation:4.5,unemployment:7.5,debt:76.5,selic:12.0,exchange:5.4,revenue:2400,spending:2470,investment:95,primary:-70},
+ budget:{cash:500,annual:2200,spent:0,emendas:35,investment:95},
+ parties:makePartyData(),ministries:MINISTRIES.map((name,i)=>({name,minister:"A definir",competence:rand(45,75),popularity:rand(40,65),loyalty:rand(55,85),articulation:rand(40,75),party:i<4?$("party").value:"Independente",performance:rand(45,70),appointed:false,scandal:0})),
+ proposals:[],votes:[],stf:[],governors:STATE_NAMES.map((n,i)=>({state:STATES[i],name:pick(FIRST)+" "+pick(LAST),party:pick(PARTIES)[0],popularity:rand(35,75),relation:rand(15,65),alignment:rand(20,75)})),
+ foreign:COUNTRIES.map(n=>({name:n,relation:rand(35,70),trade:rand(35,80),cooperation:rand(35,75)})),
+ crises:[],events:[],history:[],agenda:[],metricsHistory:[],
+ impeachment:{risk:8,stage:"Nenhum processo em andamento",accusation:false,request:false,admitted:false,chamber:false,senate:false,defense:0},
+ reelection:false,ended:false,acting:false,actions:0,monthlyLimit:8,
+};
+ if(!data){
+  let home=S.parties.find(p=>p.name===S.party);
+  if(home){home.base=true;home.relation=48;home.loyalty=75}
+  let allies=S.parties.filter(p=>["PSD","MDB","PP","União Brasil"].includes(p.name));
+  allies.forEach(p=>{p.base=true;p.relation+=12});
+  S.history.push({date:"Janeiro de 2027",text:"Início do mandato de "+S.president+". Formação do governo federal."});
+  log("O governo tomou posse. A oposição inicia sua articulação e a base parlamentar ainda é instável.");
+ }
+ $("setup").style.display="none";$("game").style.display="block";
+ render();saveGame();
+}
+function log(text){
+ if(!S)return;
+ S.history.unshift({date:dateText(),text});
+ if(S.history.length>300)S.history.pop();
+ S.news=S.history.slice(0,5);
+}
+function dateText(){return monthNames[S.month%12]+" de "+S.year}
+function saveGame(){
+ if(!S)return;
+ try{localStorage.setItem("presidencia_brasil_save",JSON.stringify(S));toast("Partida salva automaticamente.");}catch(e){toast("Não foi possível salvar neste navegador.");}
+}
+function autoSave(){try{localStorage.setItem("presidencia_brasil_save",JSON.stringify(S));}catch(e){}}
+function loadGame(){
+ let d;try{d=JSON.parse(localStorage.getItem("presidencia_brasil_save"))}catch(e){}
+ if(!d){toast("Nenhuma partida salva encontrada.");return}
+ if(!d.parties||!d.economy){toast("Arquivo de partida incompatível.");return}
+ createGame(d);
+}
+function newGame(){if(confirm("Iniciar um novo governo? A partida atual será substituída.")){localStorage.removeItem("presidencia_brasil_save");location.reload()}}
+function toast(t){let el=document.createElement("div");el.className="toast";el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),3000)}
+function showPage(name){
+ document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+ $("page-"+name).classList.add("active");
+ document.querySelectorAll(".nav[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===name));
+ $("sidebar").classList.remove("open");
+ renderPage(name);
+}
+function toggleMenu(){$("sidebar").classList.toggle("open")}
+document.querySelectorAll(".nav[data-page]").forEach(n=>n.addEventListener("click",()=>showPage(n.dataset.page)));
+
+$("party").innerHTML=PARTIES.map(p=>`<option>${p[0]}</option>`).join("");
+$("setupForm").addEventListener("submit",e=>{e.preventDefault();if(!$("president").value.trim()||!$("vice").value.trim())return;createGame()});
+
+function metric(label,value,sub,percent,color){
+ return `<div class="card"><div class="metric-label">${label}</div><div class="metric">${value}</div><div class="metric-sub">${sub||""}</div>${percent!==undefined?`<div class="progress"><span style="width:${clamp(percent)}%;background:${color||"var(--green)"}"></span></div>`:""}</div>`;
+}
+function partySeats(type){return S.parties.filter(p=>p.base).reduce((a,p)=>a+p[type],0)}
+function relationName(n){return n>=60?"Aliado estratégico":n>=20?"Relação positiva":n>=-19?"Neutra":n>=-59?"Relação ruim":"Inimigo político"}
+function relationColor(n){return n>=20?"":n>=-19?"yellow":"red"}
+function metricCards(items){return items.join("")}
+function render(){
+ if(!S)return;
+ $("topPresident").textContent=S.president;
+ $("topDate").textContent=dateText();
+ $("topDifficulty").textContent=S.difficulty==="extreme"?"EXTREMA":S.difficulty==="hard"?"DIFÍCIL":"NORMAL";
+ $("welcomeText").textContent=`Presidente ${S.president} • ${S.party} • ${S.coalition}`;
+ let c=partySeats("deputies"),sen=partySeats("senators");
+ $("metrics").innerHTML=metricCards([
+ metric("POPULARIDADE",fmt(S.popularity)+"%","Avaliação popular",S.popularity),
+ metric("APROVAÇÃO",fmt(S.approval)+"%","Avaliação do governo",S.approval),
+ metric("GOVERNABILIDADE",fmt(S.governability)+"%","Capacidade de articulação",S.governability),
+ metric("RISCO DE IMPEACHMENT",fmt(S.impeachment.risk)+"%","Risco político simulado",S.impeachment.risk,"var(--red)"),
+ metric("CÂMARA",c+"/513","Base parlamentar",c/513*100),
+ metric("SENADO",sen+"/81","Base parlamentar",sen/81*100),
+ metric("INFLAÇÃO",fmt(S.economy.inflation)+"%","Inflação anual simulada"),
+ metric("DESEMPREGO",fmt(S.economy.unemployment)+"%","Taxa simulada")
+ ]);
+ $("economicMini").innerHTML=[
+ metric("PIB",fmt(S.economy.gdp)+"%","Crescimento anual"),
+ metric("DÍVIDA",fmt(S.economy.debt)+"% do PIB","Dívida bruta"),
+ metric("SELIC",fmt(S.economy.selic)+"%","Taxa de referência"),
+ metric("RESULTADO PRIMÁRIO",money(S.economy.primary)+" bi","Resultado simulado")
+ ].join("");
+ $("agenda").innerHTML=`<div class="list-item"><b>📅 ${dateText()}</b><p class="muted">Mês ${S.month+1} de 48 do mandato.</p></div><div class="list-item">🏛️ Reuniões de coordenação e articulação legislativa</div><div class="list-item">💰 Acompanhamento da execução orçamentária</div><div class="list-item">📊 Monitoramento dos indicadores nacionais</div><button class="primary" style="width:100%;margin-top:10px" onclick="advanceMonth()">Encerrar mês e avançar →</button>`;
+ $("politicalSummary").innerHTML=`<p><b>Base na Câmara:</b> ${c} de 513 (${fmt(c/513*100)}%)</p><p><b>Base no Senado:</b> ${sen} de 81 (${fmt(sen/81*100)}%)</p><p><b>Oposição:</b> ${fmt(S.opposition)}%</p><p><b>Relacionamento com governadores:</b> ${fmt(S.governorsRelation)}%</p><span class="tag ${S.governability<30?"red":""}">${S.governability<30?"Governabilidade crítica":S.governability<55?"Coalizão instável":"Articulação moderada"}</span>`;
+ $("news").innerHTML=(S.news||S.history.slice(0,5)).slice(0,5).map(n=>`<div class="list-item"><b>${n.date}</b><p>${n.text}</p></div>`).join("")||"Nenhuma notícia.";
+ $("governmentStatus").textContent=S.ended?"Mandato encerrado":S.acting?"Vice em exercício":"Em exercício";
+ drawCharts();autoSave();
+}
+function renderPage(name){
+ if(name==="overview")return render();
+ if(name==="presidency"){
+ $("presMetrics").innerHTML=[metric("Aprovação",S.approval+"%","",S.approval),metric("Capital político",S.governability+"%","",S.governability),metric("Relação institucional",S.institution+"%","",S.institution),metric("Ações neste mês",S.actions+"/"+S.monthlyLimit,"Ações disponíveis")].join("");
+ let arr=[["Pronunciamento nacional", "speech"],["Reunião ministerial","cabinet"],["Reforma administrativa","reform"],["Viagem presidencial","travel"],["Pacto de governabilidade","pact"],["Reorganizar Casa Civil","house"]];
+ $("presActions").innerHTML=arr.map(x=>`<button class="secondary" onclick="presAction('${x[1]}')">${x[0]}</button>`).join("");
+ $("coordination").innerHTML=`<p><b>Chefe do Executivo:</b> ${S.president}</p><p><b>Vice-presidente:</b> ${S.vice}</p><p><b>Partido:</b> ${S.party}</p><p><b>Aliança:</b> ${S.coalition}</p><p><b>Perfil:</b> ${S.profile}</p><p><b>Ministros nomeados:</b> ${S.ministries.filter(m=>m.appointed).length}/${S.ministries.length}</p>`;
+ }
+ if(name==="ministries")renderMinistries();
+ if(name==="congress")renderCongress();
+ if(name==="chamber"||name==="senate")renderLegislativeHouse(name);
+ if(name==="parties")renderParties();
+ if(name==="stf")renderSTF();
+ if(name==="economy")renderEconomy();
+ if(name==="budget")renderBudget();
+ if(name==="governors")renderGovernors();
+ if(name==="foreign")renderForeign();
+ if(name==="events")renderEvents();
+ if(name==="impeachment")renderImpeachment();
+ if(name==="history")renderHistory();
+ if(name==="endgame")renderEndgame();
+}
+function renderMinistries(){
+ let appointed=S.ministries.filter(m=>m.appointed).length;
+ $("ministryMetrics").innerHTML=[metric("MINISTÉRIOS",35,"Estrutura simulada"),metric("NOMEADOS",appointed,"Ministros em exercício"),metric("DESEMPENHO MÉDIO",fmt(S.ministries.reduce((a,m)=>a+m.performance,0)/35)+"%","Média administrativa"),metric("ESCÂNDALOS",S.ministries.filter(m=>m.scandal>0).length,"Ministérios sob pressão")].join("");
+ $("ministryTable").innerHTML=S.ministries.map((m,i)=>`<tr><td>${m.name}</td><td>${m.appointed?m.minister:"<span class='muted'>Vaga</span>"}</td><td>${m.competence}%</td><td>${m.popularity}%</td><td>${m.loyalty}%</td><td><span class="tag ${m.performance<40?"red":""}">${m.performance}%</span></td><td><button class="secondary small" onclick="ministerDetail(${i})">Gerenciar</button></td></tr>`).join("");
+}
+function appointMinister(){
+ openModal(`<h3>Nomeação ministerial</h3><div class="field"><label>Ministério</label><select id="mSelect">${S.ministries.map((m,i)=>`<option value="${i}">${m.name}${m.appointed?" (ocupado)":""}</option>`).join("")}</select></div><div class="field"><label>Nome do ministro</label><input id="mName" placeholder="Nome completo"></div><div class="field"><label>Partido ou indicação</label><select id="mParty"><option>Independente</option>${S.parties.map(p=>`<option>${p.name}</option>`).join("")}</select></div><div class="field"><label>Perfil de competência</label><select id="mCompetence"><option value="85">Alta capacidade técnica</option><option value="65" selected>Experiência intermediária</option><option value="45">Indicação política</option><option value="30">Baixa experiência</option></select></div><button class="primary" onclick="confirmMinister()">Confirmar nomeação</button>`);
+}
+function confirmMinister(){
+ let i=+$("mSelect").value,m=S.ministries[i],name=$("mName").value.trim(),party=$("mParty").value;
+ if(!name){toast("Informe o nome do ministro.");return}
+ if(m.appointed&&!confirm("Este ministério já possui titular. Deseja substituí-lo?"))return;
+ m.minister=name;m.party=party;m.appointed=true;m.competence=+$("mCompetence").value;m.performance=clamp(m.competence+rand(-8,8));m.loyalty=rand(50,85);m.popularity=rand(40,70);m.articulation=rand(35,80);
+ let p=S.parties.find(x=>x.name===party);
+ if(p){p.ministries.push(m.name);p.relation=clamp(p.relation+5,-100,100);p.base=true}
+ S.governability=clamp(S.governability+2);
+ log(`${name} foi nomeado(a) para o Ministério de ${m.name}.`);
+ closeModal();renderPage("ministries");render();toast("Nomeação registrada.");
+}
+function ministerDetail(i){
+ let m=S.ministries[i];
+ openModal(`<h3>${m.name}</h3><p><b>Ministro:</b> ${m.appointed?m.minister:"Vaga"}</p><p>Competência: ${m.competence}% • Popularidade: ${m.popularity}% • Lealdade: ${m.loyalty}%</p><p>Articulação: ${m.articulation}% • Desempenho: ${m.performance}%</p><p>Denúncias: ${m.scandal}</p><div class="actions"><button class="primary" onclick="evaluateMinister(${i})">Avaliar desempenho</button><button class="warning" onclick="dismissMinister(${i})">Demitir ministro</button><button class="secondary" onclick="closeModal()">Fechar</button></div>`);
+}
+function evaluateMinister(i){
+ let m=S.ministries[i];m.performance=clamp(m.performance+rand(-8,12));m.popularity=clamp(m.popularity+rand(-5,6));log("Avaliação ministerial: "+m.name+" apresentou desempenho de "+m.performance+"%.");
+ closeModal();renderPage("ministries");
+}
+function dismissMinister(i){
+ let m=S.ministries[i];if(!m.appointed)return;
+ if(!confirm("Confirmar demissão de "+m.minister+"?"))return;
+ let p=S.parties.find(x=>x.name===m.party);if(p){p.relation=clamp(p.relation-12,-100,100);p.loyalty=clamp(p.loyalty-8)}
+ log("O presidente demitiu "+m.minister+" do Ministério de "+m.name+".");
+ m.minister="A definir";m.appointed=false;m.party="Independente";S.governability=clamp(S.governability-3);
+ closeModal();renderPage("ministries");render();
+}
+function renderCongress(){
+ let c=partySeats("deputies"),sen=partySeats("senators");
+ $("congressMetrics").innerHTML=[metric("CÂMARA",c+"/513",fmt(c/513*100)+"% da Casa",c/513*100),metric("SENADO",sen+"/81",fmt(sen/81*100)+"% da Casa",sen/81*100),metric("PROPOSTAS",S.proposals.length,"Em tramitação"),metric("APROVAÇÕES",S.votes.filter(v=>v.result==="Aprovada").length,"Votações concluídas")].join("");
+ $("proposals").innerHTML=S.proposals.length?S.proposals.map((p,i)=>`<div class="list-item"><b>${p.name}</b><p class="muted">${p.type} • ${p.stage}</p><div class="actions"><button class="primary small" onclick="voteProposal(${i})">Votar</button><button class="secondary small" onclick="editProposal(${i})">Editar</button></div></div>`).join(""):"Nenhuma proposta cadastrada.";
+ $("congressAdvice").innerHTML=`<p>O governo precisa de <b>257 deputados</b> para maioria absoluta na Câmara e <b>41 senadores</b> para maioria absoluta no Senado.</p><p>Para PEC: 308 deputados e 49 senadores, em dois turnos em cada Casa.</p><p>Seu apoio simulado: Câmara ${c}; Senado ${sen}.</p><span class="tag ${S.governability<35?"red":"yellow"}">${S.governability<35?"Articulação em crise":"Negociação necessária"}</span>`;
+ $("voteHistory").innerHTML=S.votes.slice(0,30).map(v=>`<tr><td>${v.name}</td><td>${v.house}</td><td>${v.yes}</td><td>${v.no}</td><td>${v.abstain}</td><td><span class="tag ${v.result==="Aprovada"?"":"red"}">${v.result}</span></td></tr>`).join("");
+}
+function newProposal(){
+ openModal(`<h3>Apresentar proposta legislativa</h3><div class="field"><label>Nome da proposta</label><input id="pName" placeholder="Ex.: Reforma administrativa"></div><div class="field"><label>Tipo</label><select id="pType"><option>Projeto de Lei</option><option>Projeto de Lei Complementar</option><option>Medida Provisória</option><option>PEC</option><option>Requerimento</option><option>Veto presidencial</option></select></div><div class="field"><label>Área</label><select id="pArea"><option>Economia</option><option>Social</option><option>Segurança</option><option>Infraestrutura</option><option>Meio ambiente</option><option>Institucional</option></select></div><div class="field"><label>Impacto político</label><select id="pImpact"><option value="-15">Muito controverso</option><option value="-5">Controverso</option><option value="0" selected>Moderado</option><option value="8">Consenso provável</option></select></div><button class="primary" onclick="saveProposal()">Protocolar proposta</button>`);
+}
+function saveProposal(){
+ let name=$("pName").value.trim();if(!name){toast("Informe o nome da proposta.");return}
+ S.proposals.unshift({name,type:$("pType").value,area:$("pArea").value,impact:+$("pImpact").value,stage:"Aguardando votação",month:S.month,attempts:0});
+ log("O governo protocolou a proposta: "+name+".");
+ closeModal();renderPage("congress");toast("Proposta protocolada.");
+}
+function editProposal(i){
+ let p=S.proposals[i];openModal(`<h3>Detalhes da proposta</h3><p><b>${p.name}</b></p><p>${p.type} • ${p.area} • ${p.stage}</p><p>Impacto político: ${p.impact}</p><button class="primary" onclick="voteProposal(${i});closeModal()">Submeter a votação</button>`);
+}
+function voteProposal(i){
+ let p=S.proposals[i];openModal(`<h3>Votação: ${p.name}</h3><p>${p.type} • ${p.area}</p><p>Escolha a Casa legislativa. A votação será calculada com base nas bancadas, fidelidade, relações e dificuldade.</p><div class="actions"><button class="primary" onclick="executeVote(${i},'Câmara')">Câmara dos Deputados</button><button class="primary" onclick="executeVote(${i},'Senado')">Senado Federal</button></div>`);
+}
+function openVote(h){openModal(`<h3>Votação legislativa</h3><p>Escolha uma proposta para votar em ${h}.</p>${S.proposals.map((p,i)=>`<button class="secondary" style="width:100%;margin:5px 0;text-align:left" onclick="executeVote(${i},'${h}')">${p.name} • ${p.type}</button>`).join("")||"Não existem propostas."}`)}
+function executeVote(i,h){
+ let p=S.proposals[i];if(!p){closeModal();return}
+ let type=h==="Câmara"?"deputies":"senators",total=h==="Câmara"?513:81;
+ let yes=0,no=0,abstain=0,absent=0,traitors=[];
+ let difficulty=S.difficulty==="extreme"?1.35:S.difficulty==="hard"?1.12:.85;
+ S.parties.forEach(pa=>{
+  let seats=pa[type];if(!seats)return;
+  let chance=clamp(50+pa.relation*.38+pa.loyalty*.18+p.impact+(pa.base?12:-12),5,94)/100;
+  chance=clamp(chance/difficulty,3,96)/100;
+  let loyalty=pa.base?pa.loyalty:45;
+  let yesParty=0;
+  for(let n=0;n<seats;n++){
+   let r=Math.random();
+   if(r<.035){absent++;continue}
+   if(r<.07){abstain++;continue}
+   if(Math.random()<chance){yes++;yesParty++}else no++;
+  }
+  if(pa.base&&yesParty<seats*.45){traitors.push(pa.name);pa.relation=clamp(pa.relation-9,-100,100);pa.loyalty=clamp(pa.loyalty-8)}
+ });
+ let present=total-absent,approved;
+ if(p.type==="PEC")approved=yes>=Math.ceil(total*.6);
+ else if(p.type==="Projeto de Lei Complementar")approved=yes>=Math.floor(present/2)+1;
+ else if(p.type==="Veto presidencial")approved=yes>=Math.floor(present/2)+1;
+ else if(p.type==="Medida Provisória")approved=yes>=Math.floor(present/2)+1;
+ else approved=yes>=Math.floor(present/2)+1;
+ let result=approved?"Aprovada":"Rejeitada";
+ let record={name:p.name,house:h,yes,no,abstain,absent,result,month:S.month,traitors};
+ S.votes.unshift(record);p.attempts++;
+ p.stage=approved?"Aprovada na "+h:"Rejeitada na "+h;
+ if(approved){
+  S.governability=clamp(S.governability+2);S.approval=clamp(S.approval+rand(0,2));
+  if(p.area==="Economia"){S.economy.gdp+=.1;S.budget.cash-=10}
+  if(p.area==="Social"){S.popularity=clamp(S.popularity+1)}
+  log(`O Congresso aprovou "${p.name}" na ${h}, com ${yes} votos favoráveis.`);
+ }else{
+  S.governability=clamp(S.governability-4);S.popularity=clamp(S.popularity-1);
+  log(`Derrota legislativa: "${p.name}" foi rejeitada na ${h}, com ${yes} votos favoráveis e ${no} contrários.`);
+ }
+ if(traitors.length)log("Partidos da base que não entregaram apoio: "+traitors.join(", ")+".");
+ closeModal();renderPage("congress");render();
+ openModal(`<h3>Resultado da votação</h3><span class="tag ${approved?"":"red"}">${result}</span><h2>${yes} votos favoráveis</h2><p>Contrários: ${no} • Abstenções: ${abstain} • Ausentes: ${absent}</p><p>Casa: ${h} • Total: ${total}</p><p>Partidos que traíram o governo: ${traitors.join(", ")||"Nenhum identificado"}.</p><button class="primary" onclick="closeModal()">Continuar</button>`);
+}
+function renderLegislativeHouse(which){
+ let house=which==="chamber"?"deputies":"senators",total=house==="deputies"?513:81,c=partySeats(house);
+ $(which==="chamber"?"chamberMetrics":"senateMetrics").innerHTML=[metric("CADEIRAS",total,"Composição simulada"),metric("BASE",c,"Parlamentares da base",c/total*100),metric("OPOSIÇÃO",total-c,"Fora da base"),metric("MAIORIA ABSOLUTA",Math.floor(total/2)+1,"Quórum de referência")].join("");
+ $(which==="chamber"?"chamberTable":"senateTable").innerHTML=S.parties.filter(p=>p[house]>0).map(p=>`<tr><td><b>${p.name}</b></td><td>${p[house]}</td><td>${p.relation}</td><td>${relationName(p.relation)}</td><td>${p.loyalty}%</td></tr>`).join("");
+}
+function renderParties(){
+ let base=S.parties.filter(p=>p.base);
+ $("partyMetrics").innerHTML=[metric("PARTIDOS NA BASE",base.length,"Participantes da coalizão"),metric("DEPUTADOS DA BASE",partySeats("deputies")+"/513","",partySeats("deputies")/513*100),metric("SENADORES DA BASE",partySeats("senators")+"/81","",partySeats("senators")/81*100),metric("FIDELIDADE MÉDIA",fmt(base.length?base.reduce((a,p)=>a+p.loyalty,0)/base.length:0)+"%","Base governista")].join("");
+ $("partyTable").innerHTML=S.parties.map((p,i)=>`<tr><td><b>${p.name}</b><br><span class="muted">${p.ideology}</span></td><td>${p.president}</td><td>${p.deputies}</td><td>${p.senators}</td><td><span class="tag ${relationColor(p.relation)}">${p.relation} • ${relationName(p.relation)}</span></td><td>${p.base?"Sim":"Não"}</td><td>${p.ministries.length}</td><td><button class="secondary small" onclick="partyDetail(${i})">Negociar</button></td></tr>`).join("");
+}
+function partyDetail(i){
+ let p=S.parties[i];
+ openModal(`<h3>Negociação com ${p.name}</h3><p><b>Presidente nacional:</b> ${p.president}</p><p><b>Deputados:</b> ${p.deputies} • <b>Senadores:</b> ${p.senators}</p><p><b>Relacionamento:</b> ${p.relation}/100 (${relationName(p.relation)})</p><p><b>Fidelidade:</b> ${p.loyalty}%</p><p><b>Exigência:</b> ${p.demands}</p><p><b>Histórico de promessas não cumpridas:</b> ${p.brokenPromises}</p><div class="event-options">
+<button onclick="partyAction(${i},'meeting')">1. Reunião com presidente</button>
+<button onclick="partyAction(${i},'ministry')">2. Oferecer ministério</button>
+<button onclick="partyAction(${i},'positions')">3. Oferecer cargos no segundo escalão</button>
+<button onclick="partyAction(${i},'project')">4. Negociar apoio a projeto</button>
+<button onclick="partyAction(${i},'amendment')">5. Negociar emendas parlamentares</button>
+<button onclick="partyAction(${i},'pec')">6. Negociar apoio para PEC</button>
+<button onclick="partyAction(${i},'stf')">7. Negociar indicação ao STF</button>
+<button onclick="partyAction(${i},'base')">${p.base?"8. Retirar da base":"8. Convidar para a base"}</button>
+<button onclick="partyAction(${i},'break')">9. Romper acordo político</button>
+</div>`);
+}
+function partyAction(i,action){
+ let p=S.parties[i],difficulty=S.difficulty==="extreme"?1.4:S.difficulty==="hard"?1.15:.85;
+ let chance=clamp(50+p.relation*.4+p.loyalty*.15-rand(5,25)*difficulty,5,95);
+ let accepted=Math.random()*100<chance;
+ let msg="";
+ if(action==="meeting"){
+  let gain=accepted?rand(4,10):rand(-5,2);p.relation=clamp(p.relation+gain,-100,100);msg=accepted?"A reunião foi produtiva. O partido demonstrou disposição para negociar.":"A reunião terminou sem acordo. A liderança fez críticas ao governo.";
+ }
+ if(action==="ministry"){
+  if(!accepted){p.relation=clamp(p.relation-5,-100,100);msg="O partido recusou a oferta e exigiu mais participação."; }
+  else{
+   let available=S.ministries.filter(m=>!m.appointed);
+   if(!available.length){msg="Não há ministérios vagos. O partido exige uma mudança no primeiro escalão."}
+   else{
+    let m=pick(available);m.minister=pick(FIRST)+" "+pick(LAST);m.appointed=true;m.party=p.name;m.competence=rand(45,80);m.performance=rand(45,75);m.loyalty=rand(55,85);m.popularity=rand(40,65);m.articulation=rand(45,80);p.ministries.push(m.name);p.relation=clamp(p.relation+13,-100,100);p.base=true;msg="O partido aceitou. "+m.name+" foi entregue à legenda.";
+   }
+  }
+ }
+ if(action==="positions"){if(accepted){p.relation=clamp(p.relation+7,-100,100);p.loyalty=clamp(p.loyalty+5);msg="O partido aceitou negociar cargos de segundo escalão."}else{p.relation=clamp(p.relation-4,-100,100);msg="O partido considerou a oferta insuficiente."}}
+ if(action==="project"){if(accepted){p.loyalty=clamp(p.loyalty+8);p.relation=clamp(p.relation+5,-100,100);msg="A liderança prometeu apoio condicionado à proposta."}else{p.loyalty=clamp(p.loyalty-5);msg="O partido não garantiu os votos."}}
+ if(action==="amendment"){
+  if(S.budget.emendas<3){msg="Não há saldo suficiente para o compromisso simulado."}
+  else if(accepted){S.budget.emendas-=3;p.relation=clamp(p.relation+9,-100,100);p.loyalty=clamp(p.loyalty+6);msg="Acordo de execução de emendas dentro da programação orçamentária."}
+  else{p.relation=clamp(p.relation-4,-100,100);msg="O partido rejeitou as condições."}
+ }
+ if(action==="pec"){if(accepted){p.loyalty=clamp(p.loyalty+10);p.relation=clamp(p.relation+7,-100,100);msg="O partido concordou em abrir negociação sobre a PEC, sem garantia de votos."}else{msg="O partido rejeitou o compromisso de apoio à PEC."}}
+ if(action==="stf"){if(accepted){p.relation=clamp(p.relation+4,-100,100);msg="O partido sinalizou apoio à indicação, sujeito à sabatina."}else{p.relation=clamp(p.relation-3,-100,100);msg="A liderança reservou sua posição."}}
+ if(action==="base"){p.base=!p.base;p.relation=clamp(p.relation+(p.base?5:-12),-100,100);msg=p.base?"O partido passou a integrar a base governista, sem compromisso de apoio automático.":"O partido deixou a base governista."}
+ if(action==="break"){p.base=false;p.relation=clamp(p.relation-25,-100,100);p.loyalty=clamp(p.loyalty-15);msg="O governo rompeu o acordo político com a legenda."}
+ log(msg+" Partido: "+p.name+".");S.governability=clamp(S.governability+(accepted?2:-2));
+ closeModal();renderPage("parties");render();toast(msg);
+}
+function partyMeeting(){let p=pick(S.parties);let i=S.parties.indexOf(p);partyDetail(i)}
+function negotiateCongress(){let gain=rand(-4,6);S.governability=clamp(S.governability+gain);S.parties.filter(p=>p.base).forEach(p=>p.relation=clamp(p.relation+rand(-2,3),-100,100));log("O governo realizou uma rodada de articulação no Congresso. Resultado político: "+gain+".");render();toast("Rodada de articulação concluída.");}
+function renderSTF(){
+ $("stfList").innerHTML=S.stf.length?S.stf.map((x,i)=>`<div class="list-item"><b>${x.name}</b><p>${x.age} anos • ${x.profile} • ${x.experience}</p><p>${x.stage}</p><p>${x.justification}</p><button class="primary small" onclick="advanceSTF(${i})">${x.stage==="Indicação apresentada"?"Realizar sabatina":x.stage==="Sabatina realizada"?"Votar no Senado":"Consultar"}</button></div>`).join(""):"Nenhuma indicação presidencial registrada.";
+}
+function nominateSTF(){
+ openModal(`<h3>Indicação ao Supremo Tribunal Federal</h3><div class="field"><label>Nome</label><input id="sName" placeholder="Nome do indicado"></div><div class="field"><label>Idade</label><input id="sAge" type="number" value="55" min="35"></div><div class="field"><label>Perfil jurídico</label><select id="sProfile"><option>Constitucionalista</option><option>Garantista</option><option>Conservador</option><option>Progressista</option><option>Liberal</option><option>Institucionalista</option></select></div><div class="field"><label>Histórico profissional</label><input id="sExperience" placeholder="Ex.: magistratura, advocacia, academia"></div><div class="field"><label>Justificativa</label><textarea id="sJustification"></textarea></div><button class="primary" onclick="saveSTF()">Enviar indicação</button>`);
+}
+function saveSTF(){
+ let name=$("sName").value.trim();if(!name){toast("Informe o nome.");return}
+ S.stf.unshift({name,age:+$("sAge").value,profile:$("sProfile").value,experience:$("sExperience").value||"Experiência jurídica não especificada",justification:$("sJustification").value||"Indicação presidencial",stage:"Indicação apresentada"});
+ log("O presidente indicou "+name+" ao STF.");
+ closeModal();renderPage("stf");
+}
+function advanceSTF(i){
+ let x=S.stf[i];
+ if(x.stage==="Indicação apresentada"){x.stage="Sabatina realizada";log("A CCJ realizou a sabatina de "+x.name+".");}
+ else if(x.stage==="Sabatina realizada"){
+  let yes=rand(28,57);let approved=yes>=41;
+  x.stage=approved?"Aprovado pelo Senado":"Rejeitado pelo Senado";
+  x.votes=yes;
+  S.institution=clamp(S.institution+(approved?2:-4));
+  S.governability=clamp(S.governability+(approved?2:-3));
+  log("O Senado "+(approved?"aprovou":"rejeitou")+" a indicação de "+x.name+" por "+yes+" votos favoráveis.");
+  toast("Resultado: "+x.stage+".");
+ }
+ renderPage("stf");render();
+}
+function renderEconomy(){
+ let e=S.economy;
+ $("economyMetrics").innerHTML=[metric("PIB",fmt(e.gdp)+"%","Crescimento anual"),metric("INFLAÇÃO",fmt(e.inflation)+"%","Inflação anual"),metric("DESEMPREGO",fmt(e.unemployment)+"%","Taxa de desemprego"),metric("DÍVIDA",fmt(e.debt)+"% do PIB","Dívida pública"),metric("SELIC",fmt(e.selic)+"%","Taxa básica simulada"),metric("CÂMBIO","R$ "+fmt(e.exchange),"Dólar simulado"),metric("ARRECADAÇÃO",money(e.revenue)+" bi","Receita federal"),metric("INVESTIMENTO",money(e.investment)+" bi","Investimento público")].join("");
+ $("economyActions").innerHTML=`<button class="secondary" style="width:100%;margin:5px 0" onclick="economicAction('tax')">Revisar política tributária</button><button class="secondary" style="width:100%;margin:5px 0" onclick="economicAction('spend')">Expandir investimento público</button><button class="secondary" style="width:100%;margin:5px 0" onclick="economicAction('cut')">Programa de contenção de despesas</button><button class="secondary" style="width:100%;margin:5px 0" onclick="economicAction('social')">Ampliar programa social</button><button class="secondary" style="width:100%;margin:5px 0" onclick="economicAction('industry')">Incentivos à indústria</button>`;
+ $("centralBank").innerHTML=`O Banco Central atua de forma independente no modelo. A taxa Selic simulada é ajustada de acordo com inflação, expectativas, câmbio e atividade econômica. <p><b>Selic atual:</b> ${e.selic}%</p><p><b>Inflação:</b> ${e.inflation}%</p><span class="tag blue">Autoridade monetária independente</span>`;
+}
+function economicAction(type){
+ let e=S.economy;
+ if(type==="tax"){e.revenue+=80;e.gdp-=.15;e.inflation-=.1;S.popularity-=3;log("O governo anunciou revisão tributária com aumento de arrecadação e desgaste popular.");}
+ if(type==="spend"){if(S.budget.cash<35){toast("Recursos insuficientes.");return}S.budget.cash-=35;e.investment+=15;e.gdp+=.25;e.debt+=.25;S.popularity+=2;log("O governo ampliou investimentos em infraestrutura.");}
+ if(type==="cut"){e.spending-=60;e.primary+=60;e.gdp-=.2;S.popularity-=4;e.debt-=.1;log("O governo anunciou contenção de despesas.");}
+ if(type==="social"){if(S.budget.cash<30){toast("Recursos insuficientes.");return}S.budget.cash-=30;e.spending+=30;e.unemployment-=.1;S.popularity+=3;e.debt+=.2;log("O governo ampliou políticas sociais.");}
+ if(type==="industry"){if(S.budget.cash<25){toast("Recursos insuficientes.");return}S.budget.cash-=25;e.investment+=8;e.gdp+=.15;e.debt+=.1;log("O governo lançou incentivos ao setor industrial.");}
+ S.popularity=clamp(S.popularity);S.approval=clamp(S.approval+(S.popularity>50?1:-1));S.governability=clamp(S.governability-1);
+ renderPage("economy");render();
+}
+function renderBudget(){
+ let b=S.budget,e=S.economy;
+ $("budgetMetrics").innerHTML=[metric("CAIXA SIMULADO",money(b.cash)+" bi","Disponibilidade"),metric("ORÇAMENTO ANUAL",money(b.annual)+" bi","Valor de referência"),metric("INVESTIMENTOS",money(b.investment)+" bi","Infraestrutura"),metric("EMENDAS",money(b.emendas)+" bi","Programação simulada")].join("");
+ let items=[["Investir em infraestrutura","infra"],["Ampliar saúde e educação","services"],["Ajustar despesas administrativas","admin"],["Aumentar transferência federativa","federal"]];
+ $("budgetActions").innerHTML=items.map(x=>`<button class="secondary" onclick="budgetAction('${x[1]}')">${x[0]}</button>`).join("");
+}
+function budgetAction(t){
+ let b=S.budget,e=S.economy,cost=25;
+ if(b.cash<cost){toast("Caixa insuficiente para esta operação.");return}
+ b.cash-=cost;b.spent+=cost;
+ if(t==="infra"){e.investment+=12;e.gdp+=.2;S.popularity+=1}
+ if(t==="services"){S.popularity+=2;e.spending+=15;e.unemployment-=.1}
+ if(t==="admin"){e.spending-=15;e.primary+=15;S.popularity-=1}
+ if(t==="federal"){S.governorsRelation=clamp(S.governorsRelation+6);S.popularity+=1}
+ log("O governo executou uma despesa de "+money(cost)+" bilhões no orçamento.");
+ renderPage("budget");render();
+}
+function renderGovernors(){
+ let avg=S.governors.reduce((a,g)=>a+g.relation,0)/27;
+ $("governorMetrics").innerHTML=[metric("ESTADOS",27,"Unidades federativas"),metric("RELAÇÃO MÉDIA",fmt(avg)+"%","Com governadores",avg),metric("ALINHAMENTO",S.governors.filter(g=>g.alignment>=50).length,"Governadores alinhados"),metric("OPOSIÇÃO",S.governors.filter(g=>g.relation<35).length,"Relações difíceis")].join("");
+ $("governorTable").innerHTML=S.governors.map((g,i)=>`<tr><td>${g.state} • ${g.name}</td><td>${g.name}</td><td>${g.party}</td><td>${g.popularity}%</td><td><span class="tag ${relationColor(g.relation)}">${g.relation}</span></td><td>${g.alignment}%</td><td><button class="secondary small" onclick="governorAction(${i})">Negociar</button></td></tr>`).join("");
+}
+function governorMeeting(){
+ let g=pick(S.governors);let i=S.governors.indexOf(g);governorAction(i);
+}
+function governorAction(i){
+ let g=S.governors[i];
+ openModal(`<h3>Negociação federativa • ${g.state}</h3><p><b>Governador:</b> ${g.name}</p><p>Partido: ${g.party} • Popularidade: ${g.popularity}% • Relação: ${g.relation}</p><div class="event-options"><button onclick="governorDeal(${i},'meeting')">Realizar reunião bilateral</button><button onclick="governorDeal(${i},'investment')">Oferecer investimento estadual</button><button onclick="governorDeal(${i},'pact')">Propor pacto federativo</button><button onclick="governorDeal(${i},'visit')">Agendar visita oficial</button></div>`);
+}
+function governorDeal(i,t){
+ let g=S.governors[i],cost=t==="investment"?25:5;
+ if(S.budget.cash<cost){toast("Recursos insuficientes.");return}
+ S.budget.cash-=cost;
+ let chance=clamp(50+g.relation*.35+g.alignment*.15-rand(5,20),5,95),ok=Math.random()*100<chance;
+ g.relation=clamp(g.relation+(ok?rand(5,12):rand(-5,1)));
+ if(t==="investment"&&ok)g.popularity=clamp(g.popularity+2);
+ S.governorsRelation=clamp(S.governorsRelation+(ok?2:-1));
+ log(`${t==="investment"?"Investimento estadual":t==="pact"?"Pacto federativo":t==="visit"?"Visita oficial":"Reunião"} com o governo de ${g.state}: ${ok?"resultado positivo":"negociação difícil"}.`);
+ closeModal();renderPage("governors");render();toast(ok?"Negociação concluída.":"O governador não aceitou integralmente a proposta.");
+}
+function renderForeign(){
+ let avg=S.foreign.reduce((a,x)=>a+x.relation,0)/S.foreign.length;
+ $("foreignMetrics").innerHTML=[metric("PARCEIROS",10,"Países e blocos"),metric("RELAÇÃO MÉDIA",fmt(avg)+"%","Diplomacia",avg),metric("COMÉRCIO",fmt(S.foreign.reduce((a,x)=>a+x.trade,0)/10)+"%","Índice simulado"),metric("COOPERAÇÃO",fmt(S.foreign.reduce((a,x)=>a+x.cooperation,0)/10)+"%","Cooperação internacional")].join("");
+ $("foreignTable").innerHTML=S.foreign.map((f,i)=>`<tr><td><b>${f.name}</b></td><td>${f.relation}%</td><td>${f.trade}%</td><td>${f.cooperation}%</td><td><button class="secondary small" onclick="foreignAction(${i})">Diplomacia</button></td></tr>`).join("");
+}
+function foreignAction(i){
+ let f=S.foreign[i];
+ openModal(`<h3>Relações com ${f.name}</h3><p>Diplomacia: ${f.relation}% • Comércio: ${f.trade}% • Cooperação: ${f.cooperation}%</p><div class="event-options"><button onclick="foreignDeal(${i},'visit')">Visita oficial</button><button onclick="foreignDeal(${i},'trade')">Negociar acordo comercial</button><button onclick="foreignDeal(${i},'treaty')">Propor tratado de cooperação</button><button onclick="foreignDeal(${i},'speech')">Fazer declaração diplomática</button></div>`);
+}
+function foreignDeal(i,t){
+ let f=S.foreign[i],ok=Math.random()<clamp(f.relation/100+.2,.1,.9);
+ let cost=t==="visit"?15:5;if(S.budget.cash<cost){toast("Recursos insuficientes.");return}
+ S.budget.cash-=cost;
+ f.relation=clamp(f.relation+(ok?rand(4,12):rand(-12,-3)));
+ if(t==="trade"&&ok)f.trade=clamp(f.trade+rand(5,12));
+ if(t==="treaty"&&ok)f.cooperation=clamp(f.cooperation+rand(5,12));
+ log(`Ação diplomática com ${f.name}: ${ok?"avanço nas relações":"impasse diplomático"}.`);
+ closeModal();renderPage("foreign");render();
+}
+function renderEvents(){
+ $("activeCrises").innerHTML=S.crises.length?S.crises.map(c=>`<div class="notice red"><b>${c.title}</b><p>${c.description}</p><small>${c.month}</small></div>`).join(""):"<span class='tag'>Nenhuma crise ativa</span>";
+ $("eventHistory").innerHTML=S.events.slice(0,30).map(e=>`<div class="list-item"><b>${e.date} — ${e.title}</b><p>${e.result}</p></div>`).join("")||"Nenhum evento registrado.";
+}
+function openEvent(){
+ if(S.pendingEvent){presentEvent(S.pendingEvent);return}
+ let events=[
+ {title:"Greve nacional de servidores",desc:"Sindicatos de diversas categorias anunciam mobilização por reajuste salarial e melhores condições de trabalho.",opts:[["Abrir negociação e apresentar proposta",()=>{S.approval+=1;S.budget.cash-=15;S.governability+=2}],["Manter posição e aguardar",()=>{S.popularity-=3;S.governability-=2}],["Conceder reajuste amplo",()=>{S.popularity+=2;S.economy.spending+=30;S.economy.debt+=.3}]]},
+ {title:"Denúncia em ministério",desc:"Uma reportagem aponta suspeitas de irregularidades em contratos de um ministério. A denúncia ainda não foi comprovada.",opts:[["Afastar preventivamente o ministro",()=>{let m=pick(S.ministries.filter(x=>x.appointed));m.scandal++;m.performance-=5;S.governability-=2;S.institution+=2}],["Abrir auditoria independente",()=>{S.institution+=4;S.popularity-=1}],["Defender publicamente o ministro",()=>{S.popularity-=4;S.institution-=4}]]},
+ {title:"Pressão do Congresso por cargos",desc:"Líderes de partidos da base ameaçam dificultar votações caso o governo não amplie sua participação no Executivo.",opts:[["Abrir negociação ministerial",()=>{S.governability+=3;S.budget.cash-=5}],["Rejeitar a pressão",()=>{S.governability-=6;S.opposition+=3}],["Reorganizar a coalizão",()=>{S.governability-=2;S.parties.filter(p=>p.base).forEach(p=>p.relation+=2)}]]},
+ {title:"Inflação acima das expectativas",desc:"Indicadores simulados mostram pressão inflacionária provocada por alimentos, câmbio e custos de produção.",opts:[["Reduzir gastos e revisar orçamento",()=>{S.economy.inflation-=.2;S.economy.gdp-=.15;S.popularity-=2}],["Criar medidas temporárias de alívio",()=>{S.economy.inflation-=.1;S.budget.cash-=20;S.popularity+=1}],["Não intervir diretamente",()=>{S.economy.inflation+=.3;S.approval-=2}]]},
+ {title:"Desastre ambiental",desc:"Um desastre ambiental de grande proporção exige resposta coordenada entre União, estados e municípios.",opts:[["Mobilizar força-tarefa federal",()=>{S.budget.cash-=25;S.institution+=3;S.popularity+=2}],["Coordenar ajuda com estados",()=>{S.budget.cash-=15;S.governorsRelation+=5;S.popularity+=1}],["Aguardar relatório técnico",()=>{S.popularity-=5;S.institution-=3}]]},
+ {title:"Protestos populares",desc:"Manifestações ocorrem em diversas capitais. As reivindicações envolvem serviços públicos e custo de vida.",opts:[["Abrir diálogo com representantes",()=>{S.popularity+=2;S.approval+=1}],["Anunciar pacote de medidas",()=>{S.budget.cash-=20;S.popularity+=3}],["Criticar os protestos",()=>{S.popularity-=5;S.institution-=3}]]},
+ {title:"Conflito entre ministros",desc:"Dois ministros divergem publicamente sobre prioridades e responsabilidades administrativas.",opts:[["Reunir e mediar o conflito",()=>{S.governability+=2}],["Exonerar um dos ministros",()=>{let m=pick(S.ministries.filter(x=>x.appointed));m.appointed=false;m.minister="A definir";S.governability-=2}],["Deixar a equipe resolver",()=>{S.governability-=3}]]},
+ {title:"Crise diplomática",desc:"Uma declaração internacional gera tensão com um parceiro comercial importante.",opts:[["Enviar missão diplomática",()=>{let f=pick(S.foreign);f.relation=clamp(f.relation+8);S.budget.cash-=5}],["Responder publicamente",()=>{let f=pick(S.foreign);f.relation=clamp(f.relation-12);S.approval+=1}],["Buscar mediação",()=>{S.institution+=2;S.popularity+=1}]]},
+ {title:"Queda na atividade econômica",desc:"A atividade industrial desacelera e o mercado revisa as expectativas de crescimento.",opts:[["Programa de estímulo produtivo",()=>{S.economy.gdp+=.2;S.budget.cash-=25;S.economy.debt+=.2}],["Contenção fiscal",()=>{S.economy.gdp-=.2;S.economy.primary+=20}],["Reunir setor produtivo",()=>{S.economy.gdp+=.05;S.approval+=1}]]},
+ {title:"Investigação envolvendo aliados",desc:"Uma investigação alcança figuras políticas próximas à coalizão presidencial.",opts:[["Defender investigação independente",()=>{S.institution+=4;S.governability-=3}],["Afastar aliados de funções públicas",()=>{S.governability-=5;S.institution+=2}],["Evitar manifestações",()=>{S.institution-=3;S.popularity-=2}]]},
+ {title:"Crise na saúde pública",desc:"Hospitais enfrentam pressão por falta de insumos e aumento na demanda de atendimento.",opts:[["Crédito emergencial para a saúde",()=>{S.budget.cash-=25;S.popularity+=3}],["Pacto com estados e municípios",()=>{S.budget.cash-=12;S.governorsRelation+=3}],["Aguardar reorganização",()=>{S.popularity-=4}]]},
+ {title:"Problemas na educação",desc:"Indicadores apontam dificuldades na infraestrutura escolar e na aprendizagem.",opts:[["Plano nacional de recuperação",()=>{S.budget.cash-=25;S.approval+=2}],["Pacto federativo educacional",()=>{S.governorsRelation+=3;S.budget.cash-=12}],["Manter o planejamento",()=>{S.popularity-=2}]]}
+ ];
+ let ev=pick(events);S.pendingEvent=ev;presentEvent(ev);
+}
+function presentEvent(ev){
+ openModal(`<h3>⚠️ ${ev.title}</h3><p>${ev.desc}</p><p class="muted">A decisão terá efeitos sobre o governo, a economia e a governabilidade.</p><div class="event-options">${ev.opts.map((o,i)=>`<button onclick="resolveEvent(${i})">${i+1}. ${o[0]}</button>`).join("")}</div>`);
+}
+function resolveEvent(i){
+ let ev=S.pendingEvent;if(!ev)return;
+ ev.opts[i][1]();
+ let result=ev.opts[i][0];
+ S.popularity=clamp(S.popularity);S.approval=clamp(S.approval);S.governability=clamp(S.governability);S.institution=clamp(S.institution);
+ S.events.unshift({date:dateText(),title:ev.title,result:"Decisão: "+result});
+ if(S.events.length>100)S.events.pop();
+ S.pendingEvent=null;log("Evento: "+ev.title+". Decisão: "+result+".");
+ closeModal();renderPage("events");render();
+}
+function presAction(t){
+ let cost=0,msg="";
+ if(t==="speech"){S.popularity=clamp(S.popularity+rand(-3,4));S.approval=clamp(S.approval+rand(-2,3));msg="O presidente realizou pronunciamento nacional."}
+ if(t==="cabinet"){S.governability=clamp(S.governability+rand(1,4));S.ministries.forEach(m=>m.performance=clamp(m.performance+rand(-1,2)));msg="Reunião ministerial realizada."}
+ if(t==="reform"){S.governability=clamp(S.governability-3);S.economy.spending-=10;S.approval=clamp(S.approval-2);msg="Reforma administrativa anunciada."}
+ if(t==="travel"){cost=12;S.governorsRelation=clamp(S.governorsRelation+3);S.popularity=clamp(S.popularity+1);msg="Viagem presidencial e agenda regional."}
+ if(t==="pact"){S.governability=clamp(S.governability+rand(-3,6));S.institution=clamp(S.institution+1);msg="Pacto de governabilidade submetido aos partidos."}
+ if(t==="house"){S.governability=clamp(S.governability+2);msg="Casa Civil recebeu novas atribuições de coordenação."}
+ if(S.budget.cash<cost){toast("Recursos insuficientes.");return}
+ S.budget.cash-=cost;log(msg);renderPage("presidency");render();toast(msg);
+}
+function impeachmentRisk(){
+ let r=8;
+ r+=(50-S.popularity)*.35;
+ r+=(45-S.governability)*.5;
+ r+=(50-S.institution)*.18;
+ r+=(50-S.approval)*.22;
+ r+=Math.max(0,257-partySeats("deputies"))*.09;
+ r+=S.crises.length*2;
+ r+=S.ministries.filter(m=>m.scandal>0).length*1.5;
+ if(S.difficulty==="extreme")r*=1.35;
+ return clamp(r);
+}
+function renderImpeachment(){
+ S.impeachment.risk=impeachmentRisk();
+ let imp=S.impeachment;
+ $("impeachmentMetrics").innerHTML=[metric("RISCO SIMULADO",fmt(imp.risk)+"%","Indicador político",imp.risk,"var(--red)"),metric("APOIO NA CÂMARA",partySeats("deputies")+"/513","Base parlamentar"),metric("POPULARIDADE",fmt(S.popularity)+"%","Aprovação popular",S.popularity),metric("APROVAÇÃO INSTITUCIONAL",fmt(S.institution)+"%","Estabilidade institucional",S.institution)].join("");
+ $("impeachmentStatus").innerHTML=`<p><b>Estágio:</b> ${imp.stage}</p><p><b>Pedido apresentado:</b> ${imp.request?"Sim":"Não"}</p><p><b>Admitido pelo presidente da Câmara:</b> ${imp.admitted?"Sim":"Não"}</p><p><b>Autorização da Câmara:</b> ${imp.chamber?"Aprovada":"Pendente"}</p><p><b>Julgamento no Senado:</b> ${imp.senate?"Concluído":"Pendente"}</p>${imp.request?"<div class='notice red'>O governo enfrenta um processo político-institucional. A defesa e a articulação são fundamentais.</div>":"<div class='notice'>O processo depende de denúncia juridicamente fundamentada, análise institucional e decisões parlamentares. O indicador de risco não significa abertura automática.</div>"}`;
+ $("impeachmentActions").innerHTML=`<button class="secondary" onclick="defendMandate('speech')">Pronunciamento nacional</button><button class="secondary" onclick="defendMandate('coalition')">Reconstruir coalizão</button><button class="secondary" onclick="defendMandate('cabinet')">Reformar ministérios</button><button class="secondary" onclick="defendMandate('legal')">Apresentar defesa institucional</button><button class="warning" onclick="requestImpeachment()">Simular apresentação de pedido</button><button class="danger" onclick="resign()">Renunciar à Presidência</button>`;
+}
+function defendMandate(t){
+ let imp=S.impeachment;
+ if(t==="speech"){S.popularity=clamp(S.popularity+rand(-1,3));imp.risk=clamp(imp.risk-2)}
+ if(t==="coalition"){S.parties.filter(p=>p.base).forEach(p=>p.relation=clamp(p.relation+rand(1,4),-100,100));S.governability=clamp(S.governability+rand(2,6));imp.risk=clamp(imp.risk-5)}
+ if(t==="cabinet"){let m=S.ministries.filter(x=>x.appointed).sort((a,b)=>a.performance-b.performance)[0];if(m){m.appointed=false;m.minister="A definir";S.governability=clamp(S.governability-2)}imp.risk=clamp(imp.risk-3)}
+ if(t==="legal"){imp.defense=clamp(imp.defense+15);S.institution=clamp(S.institution+3);imp.risk=clamp(imp.risk-5)}
+ log("O presidente adotou uma medida de defesa do mandato: "+t+".");renderPage("impeachment");render();
+}
+function requestImpeachment(){
+ let imp=S.impeachment;
+ if(imp.request){toast("Já existe um pedido em análise.");return}
+ if(imp.risk<35&&!confirm("O risco ainda é relativamente baixo. Deseja simular uma iniciativa de oposição mesmo assim?"))return;
+ imp.request=true;imp.accusation=true;imp.stage="Pedido apresentado à Presidência da Câmara";
+ log("A oposição apresentou um pedido de impeachment. A admissibilidade depende da decisão da Presidência da Câmara.");
+ let accepted=Math.random()*100<clamp(imp.risk*.8,5,85);
+ openModal(`<h3>Pedido de impeachment</h3><p>Um grupo político apresentou denúncia por suposto crime de responsabilidade. A Presidência da Câmara deverá decidir sobre a admissibilidade.</p><p>Probabilidade simulada de admissibilidade: ${fmt(imp.risk*.8)}%.</p><button class="primary" onclick="decideAdmissibility(${accepted})">Prosseguir para decisão</button>`);
+}
+function decideAdmissibility(ok){
+ let imp=S.impeachment;
+ if(ok){imp.admitted=true;imp.stage="Pedido admitido";log("A Presidência da Câmara admitiu o pedido de impeachment.");}
+ else{imp.request=false;imp.stage="Pedido arquivado";log("O pedido de impeachment foi arquivado na fase de admissibilidade.");S.institution=clamp(S.institution+2)}
+ closeModal();renderPage("impeachment");render();
+ if(ok)openModal(`<h3>Admissibilidade aprovada</h3><p>O processo segue para a etapa de autorização da Câmara dos Deputados. São necessários 342 votos favoráveis.</p><button class="primary" onclick="chamberImpeachment()">Realizar votação na Câmara</button>`);
+}
+function chamberImpeachment(){
+ let yes=0;
+ S.parties.forEach(p=>{let chance=clamp(45-p.relation*.35+(100-S.popularity)*.3+(p.base?-18:15),3,95);for(let i=0;i<p.deputies;i++)if(Math.random()*100<chance)yes++});
+ let passed=yes>=342;S.impeachment.chamber=passed;
+ S.impeachment.stage=passed?"Autorizado pela Câmara":"Rejeitado pela Câmara";
+ log(`Votação do impeachment na Câmara: ${yes} votos favoráveis. ${passed?"Autorização aprovada":"Autorização rejeitada"}.`);
+ closeModal();renderPage("impeachment");render();
+ openModal(`<h3>Resultado da Câmara</h3><h2>${yes} / 513 votos</h2><p>${passed?"A Câmara autorizou a instauração do processo no Senado. O presidente fica suspenso conforme a regra constitucional aplicável ao julgamento.":"O pedido não alcançou os 342 votos necessários. O presidente permanece no cargo."}</p><button class="primary" onclick="${passed?"senateImpeachment()":"closeModal()"}">${passed?"Prosseguir ao Senado":"Continuar"}</button>`);
+ if(passed){S.acting=true;S.impeachment.stage="Processo encaminhado ao Senado";S.acting=false;}
+}
+function senateImpeachment(){
+ let yes=0;
+ S.parties.forEach(p=>{let chance=clamp(45-p.relation*.25+(100-S.popularity)*.25+(p.base?-15:12),5,95);for(let i=0;i<p.senators;i++)if(Math.random()*100<chance)yes++});
+ let passed=yes>=54;
+ S.impeachment.senate=true;
+ S.impeachment.stage=passed?"Impeachment aprovado pelo Senado":"Impeachment rejeitado pelo Senado";
+ if(passed){S.phase="Vice-presidente assume";S.ended=true;S.acting=true;S.popularity=0;log("O Senado aprovou o impeachment. O vice-presidente assume a Presidência conforme as regras constitucionais.");}
+ else{S.acting=false;S.impeachment.request=false;S.impeachment.admitted=false;S.impeachment.chamber=false;log("O Senado rejeitou a condenação. O presidente retorna ao exercício pleno do mandato.");}
+ closeModal();renderPage("impeachment");render();
+ openModal(`<h3>Julgamento no Senado</h3><h2>${yes} votos favoráveis</h2><p>${passed?"O presidente foi condenado e perdeu o cargo. O vice-presidente assume definitivamente, observadas as regras constitucionais.":"A condenação não alcançou dois terços do Senado. O mandato presidencial continua."}</p><button class="primary" onclick="closeModal();render()">Continuar</button>`);
+}
+function resign(){
+ if(!confirm("Confirmar renúncia presidencial? O vice-presidente assumirá conforme as regras constitucionais."))return;
+ S.ended=true;S.acting=true;S.phase="Renúncia presidencial";S.impeachment.stage="Mandato encerrado por renúncia";log("O presidente renunciou ao mandato. O vice-presidente assume a Presidência.");renderPage("endgame");render();
+}
+function renderHistory(){
+ $("historyList").innerHTML=S.history.map(h=>`<div class="list-item"><b>${h.date}</b><p>${h.text}</p></div>`).join("")||"Nenhum registro.";
+}
+function exportHistory(){
+ let textData=S.history.map(h=>h.date+" - "+h.text).join("\n");
+ let blob=new Blob([textData],{type:"text/plain"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="historico-presidencial.txt";a.click();URL.revokeObjectURL(url);
+}
+function renderEndgame(){
+ let e=S.economy;
+ let months=S.month;
+ $("endgameContent").innerHTML=`<h3>Relatório de desempenho presidencial</h3><div class="grid">${metric("POPULARIDADE FINAL",fmt(S.popularity)+"%","")}${metric("APROVAÇÃO",fmt(S.approval)+"%","")}${metric("CRESCIMENTO DO PIB",fmt(e.gdp)+"%","")}${metric("INFLAÇÃO",fmt(e.inflation)+"%","")}</div><p><b>Presidente:</b> ${S.president}</p><p><b>Vice-presidente:</b> ${S.vice}</p><p><b>Partido:</b> ${S.party}</p><p><b>Meses governados:</b> ${months}</p><p><b>Projetos aprovados:</b> ${S.votes.filter(v=>v.result==="Aprovada").length}</p><p><b>PECs aprovadas:</b> ${S.proposals.filter(p=>p.type==="PEC"&&p.stage.includes("Aprovada")).length}</p><p><b>Ministros nomeados:</b> ${S.ministries.filter(m=>m.appointed).length}</p><p><b>Crises registradas:</b> ${S.events.length}</p><p><b>Dívida pública:</b> ${fmt(e.debt)}% do PIB</p><p><b>Resultado primário:</b> ${money(e.primary)} bilhões</p><p><b>Governabilidade:</b> ${fmt(S.governability)}%</p><p><b>Situação:</b> ${S.phase}</p><hr><h3>Legado político</h3><p>${S.popularity>=65?"O governo termina com elevado apoio popular e capital político significativo.":S.popularity>=45?"O governo termina com avaliação intermediária e legado sujeito a disputas políticas.":"O governo termina sob forte desgaste, com dificuldades de sustentação política."}</p><div class="actions"><button class="primary" onclick="attemptReelection()">Tentar reeleição</button><button class="secondary" onclick="exportHistory()">Exportar relatório histórico</button></div>`;
+}
+function attemptReelection(){
+ let score=clamp(S.popularity*.55+S.approval*.3+S.governability*.15);
+ let chance=clamp(score+rand(-15,15),5,95);
+ let win=Math.random()*100<chance;
+ openModal(`<h3>Resultado eleitoral simulado</h3><h2>${win?"Vitória eleitoral":"Derrota eleitoral"}</h2><p>Índice de competitividade: ${fmt(score)}%</p><p>${win?"Sua gestão conseguiu renovar o mandato. Um novo ciclo começa em janeiro de 2031, com nova configuração política.":"A oposição venceu a eleição. Seu governo encerra o ciclo presidencial."}</p><button class="primary" onclick="if(${win})nextTerm();else closeModal()">Continuar</button>`);
+ log("Resultado eleitoral simulado: "+(win?"reeleição conquistada":"derrota eleitoral")+".");
+}
+function nextTerm(){
+ S.month=0;S.year=2031;S.ended=false;S.phase="Segundo mandato";S.popularity=clamp(S.popularity-5);S.approval=S.popularity;S.governability=clamp(S.governability-8);S.impeachment={risk:8,stage:"Nenhum processo em andamento",accusation:false,request:false,admitted:false,chamber:false,senate:false,defense:0};log("Início do segundo mandato presidencial.");closeModal();render();
+}
+function advanceMonth(){
+ if(S.ended){toast("O mandato está encerrado.");return}
+ if(S.month>=47){S.month=48;S.ended=true;S.phase="Mandato concluído";log("O mandato presidencial chegou ao fim em dezembro de 2030.");render();showPage("endgame");return}
+ S.actions=0;
+ let e=S.economy;
+ // Ciclo macroeconômico e autoridade monetária independente.
+ e.gdp=clamp(e.gdp+(Math.random()-.48)*.45+(e.investment-90)*.002,-5,7);
+ e.inflation=clamp(e.inflation+(Math.random()-.48)*.35+(e.exchange-5)*.04,.5,20);
+ e.unemployment=clamp(e.unemployment+(Math.random()-.48)*.25-e.gdp*.035,2,25);
+ e.debt=clamp(e.debt+(e.spending-e.revenue)*.0015+(e.primary<0?.08:-.08),35,150);
+ e.selic=clamp(e.selic+(e.inflation>5?.15:e.inflation<3.5?-.1:0)+(Math.random()-.5)*.12,3,25);
+ e.exchange=clamp(e.exchange+(Math.random()-.5)*.12+(S.institution<40?.05:0),3,10);
+ e.primary=e.revenue-e.spending;
+ S.budget.cash=clamp(S.budget.cash+rand(-12,12),0,1500);
+ // Desempenho ministerial.
+ S.ministries.forEach(m=>{
+  if(m.appointed){m.performance=clamp(m.performance+(Math.random()-.48)*5);m.popularity=clamp(m.popularity+(Math.random()-.5)*3);if(m.performance<25&&Math.random()<.12){m.scandal++;S.crises.push({title:"Crise administrativa: "+m.name,description:"Problemas de gestão e denúncias pressionam a equipe ministerial.",month:dateText()});S.approval-=2;}}
+ });
+ // Partidos reavaliam a coalizão.
+ S.parties.forEach(p=>{
+  if(p.base){
+   p.relation=clamp(p.relation+(Math.random()-.53)*8+(S.governability<35?-2:0),-100,100);
+   p.loyalty=clamp(p.loyalty+(Math.random()-.55)*5,-0,100);
+   if(p.relation<-35&&Math.random()<.16){p.base=false;S.governability-=4;log("O partido "+p.name+" anunciou rompimento com a base governista.");}
+  }else{
+   p.relation=clamp(p.relation+(Math.random()-.5)*4,-100,100);
+  }
+ });
+ // Popularidade, economia e governabilidade.
+ let econScore=(e.gdp*1.2)-(e.inflation-4)*.7-(e.unemployment-7)*.5;
+ S.popularity=clamp(S.popularity+econScore*.12+(S.governability-45)*.025+(Math.random()-.5)*2);
+ S.approval=clamp(S.approval+(S.popularity-S.approval)*.12+(Math.random()-.5)*2);
+ S.rejection=clamp(100-S.approval+rand(-3,3));
+ S.governability=clamp(S.governability+(partySeats("deputies")/513*100-45)*.04+(S.popularity-50)*.025+(Math.random()-.5)*3);
+ S.opposition=clamp(100-S.governability+rand(-2,3));
+ S.governorsRelation=clamp(S.governorsRelation+(Math.random()-.5)*3);
+ S.institution=clamp(S.institution+(S.governability-45)*.035+(S.approval-45)*.02+(Math.random()-.5)*2);
+ // Crises e risco de impeachment.
+ if(Math.random()<(S.difficulty==="extreme"?.48:S.difficulty==="hard"?.36:.23))openEventRandom();
+ S.impeachment.risk=impeachmentRisk();
+ if(S.impeachment.risk>65&&!S.impeachment.request&&Math.random()<.35){
+  log("A oposição intensificou a pressão política e passou a discutir um pedido de impeachment.");
+ }
+ S.month++;S.monthIndex=S.month%12;
+ if(S.month%12===0&&S.year<2030)S.year++;
+ S.turns++;
+ S.metricsHistory.push({date:dateText(),popularity:S.popularity,approval:S.approval,gdp:e.gdp,inflation:e.inflation,debt:e.debt,governability:S.governability});
+ if(S.metricsHistory.length>48)S.metricsHistory.shift();
+ log("Relatório mensal: PIB "+fmt(e.gdp)+"%, inflação "+fmt(e.inflation)+"%, aprovação "+fmt(S.approval)+"%.");
+ if(S.month>=48){S.ended=true;S.phase="Mandato concluído";log("Fim do mandato presidencial.");}
+ render();
+ toast("Calendário avançado para "+dateText()+".");
+ if(S.ended)showPage("endgame");
+}
+function openEventRandom(){
+ let title=pick(["Pressão de sindicatos","Desgaste na coalizão","Crise de abastecimento regional","Questionamentos sobre gastos públicos","Tensão entre Poderes","Reclamações do setor produtivo","Dificuldades na execução orçamentária","Protestos regionais"]);
+ let desc="O governo enfrenta um novo desafio político e administrativo. As lideranças cobram respostas e a oposição acompanha o episódio.";
+ S.crises.unshift({title,description:desc,month:dateText()});
+ if(S.crises.length>12)S.crises.pop();
+ S.events.unshift({date:dateText(),title,result:"Crise identificada. A equipe presidencial deverá avaliar medidas."});
+ S.approval=clamp(S.approval-rand(0,2));
+ log("Nova ocorrência: "+title+".");
+}
+function openModal(content){$("modalContent").innerHTML=content;$("modalBg").classList.add("open")}
+function closeModal(){$("modalBg").classList.remove("open")}
+function drawCharts(){
+ if(!S.metricsHistory)S.metricsHistory=[];
+ let labels=S.metricsHistory.map(x=>x.date);
+ if(mainChart)mainChart.destroy();
+ if(economyChart)economyChart.destroy();
+ if(budgetChart)budgetChart.destroy();
+ if(typeof Chart==="undefined")return;
+ const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}}},scales:{y:{beginAtZero:false,grid:{color:"#edf0ed"}}}};
+ let mc=$("mainChart");if(mc)mainChart=new Chart(mc,{type:"line",data:{labels,datasets:[{label:"Popularidade",data:S.metricsHistory.map(x=>x.popularity),borderColor:"#087b45",backgroundColor:"#087b4520",tension:.3},{label:"Aprovação",data:S.metricsHistory.map(x=>x.approval),borderColor:"#d9ae2c",tension:.3},{label:"Governabilidade",data:S.metricsHistory.map(x=>x.governability),borderColor:"#2863a0",tension:.3}]},options:base});
+ let ec=$("economyChart");if(ec)economyChart=new Chart(ec,{type:"line",data:{labels,datasets:[{label:"PIB",data:S.metricsHistory.map(x=>x.gdp),borderColor:"#087b45",tension:.3},{label:"Inflação",data:S.metricsHistory.map(x=>x.inflation),borderColor:"#d9ae2c",tension:.3},{label:"Dívida",data:S.metricsHistory.map(x=>x.debt),borderColor:"#b84a50",tension:.3}]},options:base});
+ let bc=$("budgetChart");if(bc)budgetChart=new Chart(bc,{type:"doughnut",data:{labels:["Saúde","Educação","Previdência","Infraestrutura","Defesa","Demais despesas"],datasets:[{data:[18,12,35,10,7,18],backgroundColor:["#087b45","#d9ae2c","#2863a0","#61a88a","#8c9b93","#b9c6be"]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}}}});
+}
+function renderAllPages(){
+ ["ministries","congress","chamber","senate","parties","stf","economy","budget","governors","foreign","events","impeachment","history","endgame"].forEach(renderPage);
+}
+window.addEventListener("beforeunload",autoSave);
+</script>
+</body>
+</html>
