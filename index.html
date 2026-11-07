@@ -106,7 +106,7 @@ td button{margin:2px}
 <div class="setup-card">
 <div class="logo">
 <div class="logo-icon">🇧🇷</div>
-<div><h1>PRESIDÊNCIA DO BRASIL</h1><p>SIMULADOR DE GOVERNO • EDIÇÃO 2027–2030</p></div>
+<div><h1>PRESIDÊNCIA DO BRASIL</h1><p>GOVERNO DO BRASIL • EDIÇÃO 2027–2030</p></div>
 </div>
 <h2>Formação do governo</h2>
 <p class="muted" style="font-size:13px">Configure sua candidatura e prepare-se para administrar a República Federativa do Brasil.</p>
@@ -326,6 +326,18 @@ const MINISTRIES=[
 ];
 const STATES=["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 const STATE_NAMES=["Acre","Alagoas","Amapá","Amazonas","Bahia","Ceará","Distrito Federal","Espírito Santo","Goiás","Maranhão","Mato Grosso","Mato Grosso do Sul","Minas Gerais","Pará","Paraíba","Paraná","Pernambuco","Piauí","Rio de Janeiro","Rio Grande do Norte","Rio Grande do Sul","Rondônia","Roraima","Santa Catarina","São Paulo","Sergipe","Tocantins"];
+const GOVERNORS=[
+ ["AC","Mailza Assis","PP"],["AL","JHC (João Henrique Caldas)","PSDB"],
+ ["AP","Dr. Furlan","PSD"],["AM","Omar Aziz","PSD"],["BA","Jerônimo Rodrigues","PT"],
+ ["CE","Elmano de Freitas","PT"],["DF","Celina Leão","PP"],["ES","Lorenzo Pazolini","Republicanos"],
+ ["GO","Daniel Vilela","MDB"],["MA","Eduardo Braide","PSD"],["MT","Otaviano Pivetta","Republicanos"],
+ ["MS","Eduardo Riedel","PP"],["MG","Cleitinho Azevedo","Republicanos"],["PA","Dr. Daniel","Podemos"],
+ ["PB","Lucas Ribeiro","PP"],["PR","Sergio Moro","PL"],["PE","Raquel Lyra","PSD"],
+ ["PI","Rafael Fonteles","PT"],["RJ","Douglas Ruas","PL"],["RN","Cadu de Lula","PT"],
+ ["RS","Luciano Zucco","PL"],["RO","Marcos Rogério","PL"],["RR","Arthur Henrique","PL"],
+ ["SC","Jorginho Mello","PL"],["SP","Tarcísio de Freitas","Republicanos"],
+ ["SE","Fábio Mitidieri","PSD"],["TO","Vicentinho Júnior","PSDB"]
+];
 const COUNTRIES=["Estados Unidos","China","Argentina","Rússia","União Europeia","Índia","Japão","Mercosul","BRICS","ONU"];
 const PRESIDENTS=["Ana Martins","Carlos Ferreira","Marcos Oliveira","Helena Costa","Roberto Almeida","Paulo Nascimento","Ricardo Souza","Juliana Ribeiro","Fernando Carvalho","Eduardo Lima"];
 const FIRST=["João","Maria","Pedro","Ana","Carlos","Lucas","Mariana","Rafael","Paulo","Fernanda","Ricardo","Gabriela","André","Beatriz"];
@@ -335,7 +347,7 @@ const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 const clamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,n));
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const money=n=>"R$ "+Number(n).toLocaleString("pt-BR",{maximumFractionDigits:1});
-const fmt=n=>Number(n).toLocaleString("pt-BR",{maximumFractionDigits:1});
+const fmt=n=>Number.isFinite(Number(n))?Number(n).toLocaleString("pt-BR",{maximumFractionDigits:2}):"0";
 const monthNames=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
 let S=null,mainChart=null,economyChart=null,budgetChart=null;
@@ -360,12 +372,16 @@ function createGame(data){
  economy:{gdp:2.0,inflation:4.5,unemployment:7.5,debt:76.5,selic:12.0,exchange:5.4,revenue:2400,spending:2470,investment:95,primary:-70},
  budget:{cash:500,annual:2200,spent:0,emendas:35,investment:95},
  parties:makePartyData(),ministries:MINISTRIES.map((name,i)=>({name,minister:"A definir",competence:rand(45,75),popularity:rand(40,65),loyalty:rand(55,85),articulation:rand(40,75),party:i<4?$("party").value:"Independente",performance:rand(45,70),appointed:false,scandal:0})),
- proposals:[],votes:[],stf:[],governors:STATE_NAMES.map((n,i)=>({state:STATES[i],name:pick(FIRST)+" "+pick(LAST),party:pick(PARTIES)[0],popularity:rand(35,75),relation:rand(15,65),alignment:rand(20,75)})),
+ proposals:[],votes:[],stf:[],governors:[],
  foreign:COUNTRIES.map(n=>({name:n,relation:rand(35,70),trade:rand(35,80),cooperation:rand(35,75)})),
  crises:[],events:[],history:[],agenda:[],metricsHistory:[],
  impeachment:{risk:8,stage:"Nenhum processo em andamento",accusation:false,request:false,admitted:false,chamber:false,senate:false,defense:0},
  reelection:false,ended:false,acting:false,actions:0,monthlyLimit:8,
 };
+ S.governors=GOVERNORS.map(([state,name,party])=>{
+  let old=(S.governors||[]).find(g=>g.state===state)||{};
+  return {state,name,party,popularity:old.popularity??rand(35,75),relation:old.relation??rand(15,65),alignment:old.alignment??rand(20,75)};
+ });
  if(!data){
   let home=S.parties.find(p=>p.name===S.party);
   if(home){home.base=true;home.relation=48;home.loyalty=75}
@@ -449,7 +465,7 @@ function render(){
 function renderPage(name){
  if(name==="overview")return render();
  if(name==="presidency"){
- $("presMetrics").innerHTML=[metric("Aprovação",S.approval+"%","",S.approval),metric("Capital político",S.governability+"%","",S.governability),metric("Relação institucional",S.institution+"%","",S.institution),metric("Ações neste mês",S.actions+"/"+S.monthlyLimit,"Ações disponíveis")].join("");
+ $("presMetrics").innerHTML=[metric("Aprovação",fmt(S.approval)+"%","",S.approval),metric("Capital político",fmt(S.governability)+"%","",S.governability),metric("Relação institucional",fmt(S.institution)+"%","",S.institution),metric("Ações neste mês",S.actions+"/"+S.monthlyLimit,"Ações disponíveis")].join("");
  let arr=[["Pronunciamento nacional", "speech"],["Reunião ministerial","cabinet"],["Reforma administrativa","reform"],["Viagem presidencial","travel"],["Pacto de governabilidade","pact"],["Reorganizar Casa Civil","house"]];
  $("presActions").innerHTML=arr.map(x=>`<button class="secondary" onclick="presAction('${x[1]}')">${x[0]}</button>`).join("");
  $("coordination").innerHTML=`<p><b>Chefe do Executivo:</b> ${S.president}</p><p><b>Vice-presidente:</b> ${S.vice}</p><p><b>Partido:</b> ${S.party}</p><p><b>Aliança:</b> ${S.coalition}</p><p><b>Perfil:</b> ${S.profile}</p><p><b>Ministros nomeados:</b> ${S.ministries.filter(m=>m.appointed).length}/${S.ministries.length}</p>`;
@@ -471,7 +487,7 @@ function renderPage(name){
 function renderMinistries(){
  let appointed=S.ministries.filter(m=>m.appointed).length;
  $("ministryMetrics").innerHTML=[metric("MINISTÉRIOS",35,"Estrutura simulada"),metric("NOMEADOS",appointed,"Ministros em exercício"),metric("DESEMPENHO MÉDIO",fmt(S.ministries.reduce((a,m)=>a+m.performance,0)/35)+"%","Média administrativa"),metric("ESCÂNDALOS",S.ministries.filter(m=>m.scandal>0).length,"Ministérios sob pressão")].join("");
- $("ministryTable").innerHTML=S.ministries.map((m,i)=>`<tr><td>${m.name}</td><td>${m.appointed?m.minister:"<span class='muted'>Vaga</span>"}</td><td>${m.competence}%</td><td>${m.popularity}%</td><td>${m.loyalty}%</td><td><span class="tag ${m.performance<40?"red":""}">${m.performance}%</span></td><td><button class="secondary small" onclick="ministerDetail(${i})">Gerenciar</button></td></tr>`).join("");
+ $("ministryTable").innerHTML=S.ministries.map((m,i)=>`<tr><td>${m.name}</td><td>${m.appointed?m.minister:"<span class='muted'>Vaga</span>"}</td><td>${fmt(m.competence)}%</td><td>${fmt(m.popularity)}%</td><td>${fmt(m.loyalty)}%</td><td><span class="tag ${m.performance<40?"red":""}">${fmt(m.performance)}%</span></td><td><button class="secondary small" onclick="ministerDetail(${i})">Gerenciar</button></td></tr>`).join("");
 }
 function appointMinister(){
  openModal(`<h3>Nomeação ministerial</h3><div class="field"><label>Ministério</label><select id="mSelect">${S.ministries.map((m,i)=>`<option value="${i}">${m.name}${m.appointed?" (ocupado)":""}</option>`).join("")}</select></div><div class="field"><label>Nome do ministro</label><input id="mName" placeholder="Nome completo"></div><div class="field"><label>Partido ou indicação</label><select id="mParty"><option>Independente</option>${S.parties.map(p=>`<option>${p.name}</option>`).join("")}</select></div><div class="field"><label>Perfil de competência</label><select id="mCompetence"><option value="85">Alta capacidade técnica</option><option value="65" selected>Experiência intermediária</option><option value="45">Indicação política</option><option value="30">Baixa experiência</option></select></div><button class="primary" onclick="confirmMinister()">Confirmar nomeação</button>`);
@@ -489,7 +505,7 @@ function confirmMinister(){
 }
 function ministerDetail(i){
  let m=S.ministries[i];
- openModal(`<h3>${m.name}</h3><p><b>Ministro:</b> ${m.appointed?m.minister:"Vaga"}</p><p>Competência: ${m.competence}% • Popularidade: ${m.popularity}% • Lealdade: ${m.loyalty}%</p><p>Articulação: ${m.articulation}% • Desempenho: ${m.performance}%</p><p>Denúncias: ${m.scandal}</p><div class="actions"><button class="primary" onclick="evaluateMinister(${i})">Avaliar desempenho</button><button class="warning" onclick="dismissMinister(${i})">Demitir ministro</button><button class="secondary" onclick="closeModal()">Fechar</button></div>`);
+ openModal(`<h3>${m.name}</h3><p><b>Ministro:</b> ${m.appointed?m.minister:"Vaga"}</p><p>Competência: ${fmt(m.competence)}% • Popularidade: ${fmt(m.popularity)}% • Lealdade: ${fmt(m.loyalty)}%</p><p>Articulação: ${fmt(m.articulation)}% • Desempenho: ${fmt(m.performance)}%</p><p>Denúncias: ${m.scandal}</p><div class="actions"><button class="primary" onclick="evaluateMinister(${i})">Avaliar desempenho</button><button class="warning" onclick="dismissMinister(${i})">Demitir ministro</button><button class="secondary" onclick="closeModal()">Fechar</button></div>`);
 }
 function evaluateMinister(i){
  let m=S.ministries[i];m.performance=clamp(m.performance+rand(-8,12));m.popularity=clamp(m.popularity+rand(-5,6));log("Avaliação ministerial: "+m.name+" apresentou desempenho de "+m.performance+"%.");
@@ -571,12 +587,10 @@ function executeVote(i,h){
 function renderLegislativeHouse(which){
  let house=which==="chamber"?"deputies":"senators",total=house==="deputies"?513:81,c=partySeats(house);
  $(which==="chamber"?"chamberMetrics":"senateMetrics").innerHTML=[metric("CADEIRAS",total,"Composição simulada"),metric("BASE",c,"Parlamentares da base",c/total*100),metric("OPOSIÇÃO",total-c,"Fora da base"),metric("MAIORIA ABSOLUTA",Math.floor(total/2)+1,"Quórum de referência")].join("");
- $(which==="chamber"?"chamberTable":"senateTable").innerHTML=S.parties.filter(p=>p[house]>0).map(p=>`<tr><td><b>${p.name}</b></td><td>${p[house]}</td><td>${p.relation}</td><td>${relationName(p.relation)}</td><td>${p.loyalty}%</td></tr>`).join("");
+ $(which==="chamber"?"chamberTable":"senateTable").innerHTML=S.parties.filter(p=>p[house]>0).map(p=>`<tr><td><b>${p.name}</b></td><td>${p[house]}</td><td>${fmt(p.relation)}%</td><td>${relationName(p.relation)}</td><td>${fmt(p.loyalty)}%</td></tr>`).join("");
 }
+
 function renderParties(){
- let base=S.parties.filter(p=>p.base);
- $("partyMetrics").innerHTML=[metric("PARTIDOS NA BASE",base.length,"Participantes da coalizão"),metric("DEPUTADOS DA BASE",partySeats("deputies")+"/513","",partySeats("deputies")/513*100),metric("SENADORES DA BASE",partySeats("senators")+"/81","",partySeats("senators")/81*100),metric("FIDELIDADE MÉDIA",fmt(base.length?base.reduce((a,p)=>a+p.loyalty,0)/base.length:0)+"%","Base governista")].join("");
- $("partyTable").innerHTML=S.parties.map((p,i)=>`<tr><td><b>${p.name}</b><br><span class="muted">${p.ideology}</span></td><td>${p.president}</td><td>${p.deputies}</td><td>${p.senators}</td><td><span class="tag ${relationColor(p.relation)}">${p.relation} • ${relationName(p.relation)}</span></td><td>${p.base?"Sim":"Não"}</td><td>${p.ministries.length}</td><td><button class="secondary small" onclick="partyDetail(${i})">Negociar</button></td></tr>`).join("");
 }
 function partyDetail(i){
  let p=S.parties[i];
@@ -656,7 +670,7 @@ function renderEconomy(){
  let e=S.economy;
  $("economyMetrics").innerHTML=[metric("PIB",fmt(e.gdp)+"%","Crescimento anual"),metric("INFLAÇÃO",fmt(e.inflation)+"%","Inflação anual"),metric("DESEMPREGO",fmt(e.unemployment)+"%","Taxa de desemprego"),metric("DÍVIDA",fmt(e.debt)+"% do PIB","Dívida pública"),metric("SELIC",fmt(e.selic)+"%","Taxa básica simulada"),metric("CÂMBIO","R$ "+fmt(e.exchange),"Dólar simulado"),metric("ARRECADAÇÃO",money(e.revenue)+" bi","Receita federal"),metric("INVESTIMENTO",money(e.investment)+" bi","Investimento público")].join("");
  $("economyActions").innerHTML=`<button class="secondary" style="width:100%;margin:5px 0" onclick="economicAction('tax')">Revisar política tributária</button><button class="secondary" style="width:100%;margin:5px 0" onclick="economicAction('spend')">Expandir investimento público</button><button class="secondary" style="width:100%;margin:5px 0" onclick="economicAction('cut')">Programa de contenção de despesas</button><button class="secondary" style="width:100%;margin:5px 0" onclick="economicAction('social')">Ampliar programa social</button><button class="secondary" style="width:100%;margin:5px 0" onclick="economicAction('industry')">Incentivos à indústria</button>`;
- $("centralBank").innerHTML=`O Banco Central atua de forma independente no modelo. A taxa Selic simulada é ajustada de acordo com inflação, expectativas, câmbio e atividade econômica. <p><b>Selic atual:</b> ${e.selic}%</p><p><b>Inflação:</b> ${e.inflation}%</p><span class="tag blue">Autoridade monetária independente</span>`;
+ $("centralBank").innerHTML=`O Banco Central atua de forma independente no modelo. A taxa Selic simulada é ajustada de acordo com inflação, expectativas, câmbio e atividade econômica. <p><b>Selic atual:</b> ${fmt(e.selic)}%</p><p><b>Inflação:</b> ${fmt(e.inflation)}%</p><span class="tag blue">Autoridade monetária independente</span>`;
 }
 function economicAction(type){
  let e=S.economy;
@@ -688,14 +702,14 @@ function budgetAction(t){
 function renderGovernors(){
  let avg=S.governors.reduce((a,g)=>a+g.relation,0)/27;
  $("governorMetrics").innerHTML=[metric("ESTADOS",27,"Unidades federativas"),metric("RELAÇÃO MÉDIA",fmt(avg)+"%","Com governadores",avg),metric("ALINHAMENTO",S.governors.filter(g=>g.alignment>=50).length,"Governadores alinhados"),metric("OPOSIÇÃO",S.governors.filter(g=>g.relation<35).length,"Relações difíceis")].join("");
- $("governorTable").innerHTML=S.governors.map((g,i)=>`<tr><td>${g.state} • ${g.name}</td><td>${g.name}</td><td>${g.party}</td><td>${g.popularity}%</td><td><span class="tag ${relationColor(g.relation)}">${g.relation}</span></td><td>${g.alignment}%</td><td><button class="secondary small" onclick="governorAction(${i})">Negociar</button></td></tr>`).join("");
+ $("governorTable").innerHTML=S.governors.map((g,i)=>`<tr><td>${g.state} • ${g.name}</td><td>${g.name}</td><td>${g.party}</td><td>${fmt(g.popularity)}%</td><td><span class="tag ${relationColor(g.relation)}">${fmt(g.relation)}</span></td><td>${fmt(g.alignment)}%</td><td><button class="secondary small" onclick="governorAction(${i})">Negociar</button></td></tr>`).join("");
 }
 function governorMeeting(){
  let g=pick(S.governors);let i=S.governors.indexOf(g);governorAction(i);
 }
 function governorAction(i){
  let g=S.governors[i];
- openModal(`<h3>Negociação federativa • ${g.state}</h3><p><b>Governador:</b> ${g.name}</p><p>Partido: ${g.party} • Popularidade: ${g.popularity}% • Relação: ${g.relation}</p><div class="event-options"><button onclick="governorDeal(${i},'meeting')">Realizar reunião bilateral</button><button onclick="governorDeal(${i},'investment')">Oferecer investimento estadual</button><button onclick="governorDeal(${i},'pact')">Propor pacto federativo</button><button onclick="governorDeal(${i},'visit')">Agendar visita oficial</button></div>`);
+ openModal(`<h3>Negociação federativa • ${g.state}</h3><p><b>Governador:</b> ${g.name}</p><p>Partido: ${g.party} • Popularidade: ${fmt(g.popularity)}% • Relação: ${fmt(g.relation)}</p><div class="event-options"><button onclick="governorDeal(${i},'meeting')">Realizar reunião bilateral</button><button onclick="governorDeal(${i},'investment')">Oferecer investimento estadual</button><button onclick="governorDeal(${i},'pact')">Propor pacto federativo</button><button onclick="governorDeal(${i},'visit')">Agendar visita oficial</button></div>`);
 }
 function governorDeal(i,t){
  let g=S.governors[i],cost=t==="investment"?25:5;
@@ -711,11 +725,11 @@ function governorDeal(i,t){
 function renderForeign(){
  let avg=S.foreign.reduce((a,x)=>a+x.relation,0)/S.foreign.length;
  $("foreignMetrics").innerHTML=[metric("PARCEIROS",10,"Países e blocos"),metric("RELAÇÃO MÉDIA",fmt(avg)+"%","Diplomacia",avg),metric("COMÉRCIO",fmt(S.foreign.reduce((a,x)=>a+x.trade,0)/10)+"%","Índice simulado"),metric("COOPERAÇÃO",fmt(S.foreign.reduce((a,x)=>a+x.cooperation,0)/10)+"%","Cooperação internacional")].join("");
- $("foreignTable").innerHTML=S.foreign.map((f,i)=>`<tr><td><b>${f.name}</b></td><td>${f.relation}%</td><td>${f.trade}%</td><td>${f.cooperation}%</td><td><button class="secondary small" onclick="foreignAction(${i})">Diplomacia</button></td></tr>`).join("");
+ $("foreignTable").innerHTML=S.foreign.map((f,i)=>`<tr><td><b>${f.name}</b></td><td>${fmt(f.relation)}%</td><td>${fmt(f.trade)}%</td><td>${fmt(f.cooperation)}%</td><td><button class="secondary small" onclick="foreignAction(${i})">Diplomacia</button></td></tr>`).join("");
 }
 function foreignAction(i){
  let f=S.foreign[i];
- openModal(`<h3>Relações com ${f.name}</h3><p>Diplomacia: ${f.relation}% • Comércio: ${f.trade}% • Cooperação: ${f.cooperation}%</p><div class="event-options"><button onclick="foreignDeal(${i},'visit')">Visita oficial</button><button onclick="foreignDeal(${i},'trade')">Negociar acordo comercial</button><button onclick="foreignDeal(${i},'treaty')">Propor tratado de cooperação</button><button onclick="foreignDeal(${i},'speech')">Fazer declaração diplomática</button></div>`);
+ openModal(`<h3>Relações com ${f.name}</h3><p>Diplomacia: ${fmt(f.relation)}% • Comércio: ${fmt(f.trade)}% • Cooperação: ${fmt(f.cooperation)}%</p><div class="event-options"><button onclick="foreignDeal(${i},'visit')">Visita oficial</button><button onclick="foreignDeal(${i},'trade')">Negociar acordo comercial</button><button onclick="foreignDeal(${i},'treaty')">Propor tratado de cooperação</button><button onclick="foreignDeal(${i},'speech')">Fazer declaração diplomática</button></div>`);
 }
 function foreignDeal(i,t){
  let f=S.foreign[i],ok=Math.random()<clamp(f.relation/100+.2,.1,.9);
